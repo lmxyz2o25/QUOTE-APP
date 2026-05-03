@@ -1,0 +1,91 @@
+# =========================================================
+# QUOTE-APP .gitignore
+# =========================================================
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+dist/
+build/
+out/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+
+# Environment files - DO NOT COMMIT SECRET KEYS
+.env
+.env.*
+!.env.example
+
+apps/api/.env
+apps/api/.env.*
+!apps/api/.env.example
+
+apps/web/.env
+apps/web/.env.local
+apps/web/.env.production
+apps/web/.env.development
+apps/web/.env.*
+!apps/web/.env.example
+
+# Supabase local/temp
+supabase/.branches/
+supabase/.temp/
+supabase/.cache/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# NestJS / API
+apps/api/dist/
+
+# Package manager
+package-lock.json
+yarn.lock
+
+# Keep pnpm lockfile
+!pnpm-lock.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+.idea/
+
+# Temp / uploads / exports
+tmp/
+uploads/
+exports/
+backups/
+
+# Local generated files
+*.local
+*.tmp
+*.bak
+
+# Certificates / keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Database dumps
+*.dump
+*.sql.gz
+*.backup
