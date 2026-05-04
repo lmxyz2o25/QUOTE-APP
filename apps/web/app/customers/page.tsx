@@ -147,12 +147,17 @@ export default function CustomersPage() {
     addressEditorRef.current.focus();
   }
 
+  function syncAddressEditorToForm() {
+    if (!addressEditorRef.current) return;
+    updateForm('address', addressEditorRef.current.innerHTML);
+  }
+
   function runAddressCommand(command: string, value?: string) {
     focusAddressEditor();
     document.execCommand(command, false, value);
 
     if (addressEditorRef.current) {
-      updateForm('address', addressEditorRef.current.innerHTML);
+      syncAddressEditorToForm();
       addressEditorRef.current.focus();
     }
   }
@@ -464,9 +469,12 @@ export default function CustomersPage() {
                   onClick={(e) => {
                     e.currentTarget.focus();
                   }}
-                  onKeyUp={(e) => updateForm('address', e.currentTarget.innerHTML)}
-                  onInput={(e) => updateForm('address', e.currentTarget.innerHTML)}
-                  dangerouslySetInnerHTML={{ __html: form.address }}
+                  onInput={() => {
+                    syncAddressEditorToForm();
+                  }}
+                  onBlur={() => {
+                    syncAddressEditorToForm();
+                  }}
                 />
               </div>
 
@@ -478,7 +486,7 @@ export default function CustomersPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => updateForm('email', e.target.value)}
-                    placeholder="email@company.com"
+                    placeholder="Email customer"
                   />
                 </label>
 
@@ -488,7 +496,7 @@ export default function CustomersPage() {
                     style={styles.input}
                     value={form.phone}
                     onChange={(e) => updateForm('phone', e.target.value)}
-                    placeholder="Phone number"
+                    placeholder="Phone customer"
                   />
                 </label>
               </div>
