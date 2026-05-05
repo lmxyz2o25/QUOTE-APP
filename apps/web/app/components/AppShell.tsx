@@ -168,12 +168,21 @@ function MenuIcon({ label, active }: { label: string; active: boolean }) {
   );
 }
 
+function HamburgerIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="#082b52" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function AppShell({ children, activeMenu = 'Dashboard' }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('marketing');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.margin = '0';
@@ -208,6 +217,10 @@ export default function AppShell({ children, activeMenu = 'Dashboard' }: AppShel
     setRole(getRoleFromEmail(storedEmail));
   }, [router]);
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   const visibleMenus = useMemo(() => {
     return menuItems.filter((item) => item.roles.includes(role));
   }, [role]);
@@ -227,123 +240,354 @@ export default function AppShell({ children, activeMenu = 'Dashboard' }: AppShel
     router.replace('/login');
   }
 
+  function handleNavigate(href: string) {
+    router.push(href);
+    setSidebarOpen(false);
+  }
+
   return (
-    <main style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <img src="/images/logo_company.png" alt="SALES-APP Logo" style={styles.brandLogoImage} />
+    <>
+      <style jsx global>{`
+        * {
+          box-sizing: border-box;
+        }
 
-          <div style={styles.brandTextWrap}>
-            <div style={styles.brandTitle}>SALES-APP</div>
-            <div style={styles.brandSubtitle}>{role === 'super_admin' ? 'SuperAdmin' : 'Marketing / Sales'}</div>
-          </div>
-        </div>
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          background: #dfe8f2;
+        }
 
-        <button type="button" style={styles.divisionButton}>
-          <span style={styles.divisionIconWrap}>
-            <DivisionIcon />
-          </span>
-          <span style={styles.divisionText}>Sales Division</span>
-        </button>
+        button,
+        input,
+        textarea,
+        select {
+          font-family: Arial, sans-serif;
+        }
 
-        <div style={styles.groupTitle}>CONTENT</div>
+        .app-shell {
+          width: 100%;
+          max-width: 100%;
+          height: 100vh;
+          height: 100dvh;
+          overflow: hidden;
+          display: flex;
+          background: #dfe8f2;
+          color: #082b52;
+          font-family: Arial, sans-serif;
+        }
 
-        <nav style={styles.menuList}>
-          {visibleMenus.map((item) => {
-            const active = isActive(item);
+        .app-shell__sidebar {
+          width: 300px;
+          min-width: 300px;
+          max-width: 300px;
+          height: 100vh;
+          height: 100dvh;
+          background: #edf3f8;
+          border-right: 1px solid #cdd9e6;
+          padding: 18px 18px;
+          display: flex;
+          flex-direction: column;
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          scrollbar-width: thin;
+          z-index: 60;
+        }
 
-            return (
-              <button
-                key={item.href}
-                type="button"
-                onClick={() => router.push(item.href)}
-                style={{
-                  ...styles.menuButton,
-                  ...(active ? styles.menuButtonActive : {}),
-                }}
-              >
-                <span style={styles.menuIcon}>
-                  <MenuIcon label={item.label} active={active} />
-                </span>
-                <span style={styles.menuText}>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        .app-shell__sidebar::-webkit-scrollbar {
+          width: 8px;
+        }
 
-        <div style={styles.divider} />
+        .app-shell__sidebar::-webkit-scrollbar-track {
+          background: transparent;
+        }
 
-        <div style={styles.groupTitle}>ADVANCED</div>
+        .app-shell__sidebar::-webkit-scrollbar-thumb {
+          background: rgba(8, 43, 82, 0.18);
+          border-radius: 999px;
+        }
 
-        <nav style={styles.menuList}>
-          {visibleAdvanced.map((item) => {
-            const active = isActive(item);
+        .app-shell__content {
+          flex: 1;
+          width: calc(100% - 300px);
+          min-width: 0;
+          max-width: calc(100% - 300px);
+          height: 100vh;
+          height: 100dvh;
+          overflow-y: auto;
+          overflow-x: hidden;
+          background: #dfe8f2;
+          padding: 18px;
+        }
 
-            return (
-              <button
-                key={item.href}
-                type="button"
-                onClick={() => router.push(item.href)}
-                style={{
-                  ...styles.menuButton,
-                  ...(active ? styles.menuButtonActive : {}),
-                }}
-              >
-                <span style={styles.menuIcon}>
-                  <MenuIcon label={item.label} active={active} />
-                </span>
-                <span style={styles.menuText}>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        .app-shell__mobile-topbar {
+          display: none;
+        }
 
-        <div style={styles.sidebarSpacer} />
+        .app-shell__overlay {
+          display: none;
+        }
 
-        <div style={styles.userBox}>
-          <div style={styles.userAvatar}>CB</div>
+        @media (max-width: 1024px) {
+          .app-shell__sidebar {
+            width: 278px;
+            min-width: 278px;
+            max-width: 278px;
+          }
 
-          <div style={styles.userCopy}>
-            <strong style={styles.userRole}>{role === 'super_admin' ? 'SuperAdmin' : 'Marketing / Sales'}</strong>
-            <span style={styles.userEmail}>{email || '-'}</span>
-          </div>
+          .app-shell__content {
+            width: calc(100% - 278px);
+            max-width: calc(100% - 278px);
+            padding: 16px;
+          }
+        }
 
-          <button type="button" onClick={handleLogout} style={styles.logoutMini}>
-            ⌄
+        @media (max-width: 820px) {
+          .app-shell {
+            display: block;
+            position: relative;
+          }
+
+          .app-shell__mobile-topbar {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 62px;
+            z-index: 70;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(237, 243, 248, 0.96);
+            border-bottom: 1px solid #cdd9e6;
+            backdrop-filter: blur(10px);
+          }
+
+          .app-shell__mobile-brand {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+
+          .app-shell__mobile-title {
+            color: #071f3c;
+            font-size: 17px;
+            font-weight: 900;
+            line-height: 1.05;
+          }
+
+          .app-shell__mobile-subtitle {
+            color: #46627d;
+            font-size: 12px;
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .app-shell__hamburger {
+            width: 42px;
+            height: 42px;
+            border: 1px solid #cdd9e6;
+            background: #ffffff;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(8, 43, 82, 0.08);
+          }
+
+          .app-shell__sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: min(82vw, 300px);
+            min-width: 0;
+            max-width: min(82vw, 300px);
+            height: 100vh;
+            height: 100dvh;
+            transform: translateX(-105%);
+            transition: transform 220ms ease;
+            box-shadow: 20px 0 45px rgba(8, 43, 82, 0.18);
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+            padding-bottom: 24px;
+          }
+
+          .app-shell__sidebar--open {
+            transform: translateX(0);
+          }
+
+          .app-shell__overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 55;
+            background: rgba(7, 31, 60, 0.42);
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+          }
+
+          .app-shell__content {
+            width: 100%;
+            max-width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            padding: 78px 14px 18px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .app-shell__content {
+            padding: 74px 10px 14px;
+          }
+
+          .app-shell__mobile-title {
+            font-size: 16px;
+          }
+
+          .app-shell__mobile-subtitle {
+            font-size: 11px;
+          }
+        }
+      `}</style>
+
+      <main className="app-shell">
+        <header className="app-shell__mobile-topbar">
+          <button
+            type="button"
+            className="app-shell__hamburger"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <HamburgerIcon />
           </button>
-        </div>
-      </aside>
 
-      <section style={styles.content}>{children}</section>
-    </main>
+          <div className="app-shell__mobile-brand">
+            <div className="app-shell__mobile-title">SALES-APP</div>
+            <div className="app-shell__mobile-subtitle">
+              {activeMenu} • {role === 'super_admin' ? 'SuperAdmin' : 'Marketing / Sales'}
+            </div>
+          </div>
+        </header>
+
+        {sidebarOpen ? (
+          <button
+            type="button"
+            className="app-shell__overlay"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu overlay"
+          />
+        ) : null}
+
+        <aside className={`app-shell__sidebar ${sidebarOpen ? 'app-shell__sidebar--open' : ''}`}>
+          <div style={styles.brand}>
+            <img src="/images/logo_company.png" alt="SALES-APP Logo" style={styles.brandLogoImage} />
+
+            <div style={styles.brandTextWrap}>
+              <div style={styles.brandTitle}>SALES-APP</div>
+              <div style={styles.brandSubtitle}>{role === 'super_admin' ? 'SuperAdmin' : 'Marketing / Sales'}</div>
+            </div>
+          </div>
+
+          <button type="button" style={styles.divisionButton}>
+            <span style={styles.divisionIconWrap}>
+              <DivisionIcon />
+            </span>
+            <span style={styles.divisionText}>Sales Division</span>
+          </button>
+
+          <div style={styles.groupTitle}>CONTENT</div>
+
+          <nav style={styles.menuList}>
+            {visibleMenus.map((item) => {
+              const active = isActive(item);
+
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => handleNavigate(item.href)}
+                  style={{
+                    ...styles.menuButton,
+                    ...(active ? styles.menuButtonActive : {}),
+                  }}
+                >
+                  <span style={styles.menuIcon}>
+                    <MenuIcon label={item.label} active={active} />
+                  </span>
+                  <span style={styles.menuText}>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div style={styles.divider} />
+
+          <div style={styles.groupTitle}>ADVANCED</div>
+
+          <nav style={styles.menuList}>
+            {visibleAdvanced.map((item) => {
+              const active = isActive(item);
+
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => handleNavigate(item.href)}
+                  style={{
+                    ...styles.menuButton,
+                    ...(active ? styles.menuButtonActive : {}),
+                  }}
+                >
+                  <span style={styles.menuIcon}>
+                    <MenuIcon label={item.label} active={active} />
+                  </span>
+                  <span style={styles.menuText}>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div style={styles.sidebarSpacer} />
+
+          <div style={styles.userBox}>
+            <div style={styles.userAvatar}>CB</div>
+
+            <div style={styles.userCopy}>
+              <strong style={styles.userRole}>{role === 'super_admin' ? 'SuperAdmin' : 'Marketing / Sales'}</strong>
+              <span style={styles.userEmail}>{email || '-'}</span>
+            </div>
+
+            <button type="button" onClick={handleLogout} style={styles.logoutMini} title="Logout">
+              ⌄
+            </button>
+          </div>
+        </aside>
+
+        <section className="app-shell__content">{children}</section>
+      </main>
+    </>
   );
 }
 
 const styles: Record<string, CSSProperties> = {
-  shell: {
-    width: '100%',
-    maxWidth: '100%',
-    height: '100vh',
-    overflow: 'hidden',
-    display: 'flex',
-    background: '#dfe8f2',
-    color: '#082b52',
-    fontFamily: 'Arial, sans-serif',
-    boxSizing: 'border-box',
-  },
-  sidebar: {
-    width: 300,
-    minWidth: 300,
-    maxWidth: 300,
-    height: '100vh',
-    background: '#edf3f8',
-    borderRight: '1px solid #cdd9e6',
-    padding: '18px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    boxSizing: 'border-box',
-  },
   brand: {
     display: 'flex',
     flexDirection: 'column',
@@ -508,17 +752,5 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     color: '#6f8195',
     fontWeight: 700,
-  },
-  content: {
-    flex: 1,
-    width: 'calc(100% - 300px)',
-    minWidth: 0,
-    maxWidth: 'calc(100% - 300px)',
-    height: '100vh',
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    background: '#dfe8f2',
-    padding: 18,
-    boxSizing: 'border-box',
   },
 };

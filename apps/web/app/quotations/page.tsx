@@ -2,7 +2,6 @@
 
 import AppShell from '../components/AppShell';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ClipboardEvent, CSSProperties } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PrintLayout from './printlayout';
 
@@ -50,8 +49,8 @@ type QuotationRow = {
   quote_date?: string | null;
   customer_id?: string | null;
   customer_name_snapshot?: string | null;
-  attention_snapshot?: string | null;
   customer_address_snapshot?: string | null;
+  attention_snapshot?: string | null;
   subtotal?: number | null;
   discount_value?: number | null;
   tax_percent?: number | null;
@@ -72,28 +71,13 @@ type QuotationItemRow = {
   line_total?: number | null;
 };
 
-type ImageOption = {
-  label: string;
-  value: string;
-};
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const COMPANY_INITIAL = 'CBI';
-
-const LOGO_OPTIONS: ImageOption[] = [
-  { label: 'CBI Logo Default', value: '/images/Logo-CBI.png' },
-  { label: 'Logo Company', value: '/images/logo_company.png' },
-  { label: 'Quotation Header', value: '/images/quotation.png' },
-  { label: 'Layout Image', value: '/images/Layout.png' },
-];
-
-const ADDRESS_OPTIONS: ImageOption[] = [
-  { label: 'Address CBI', value: '/images/address-cbi.png' },
-  { label: 'Address Default', value: '/images/address.png' },
-];
+const LOGO_SRC = '/images/Logo-CBI.png';
+const ADDRESS_IMAGE_SRC = '/images/address-cbi.png';
 
 const DEFAULT_TERMS =
   'Item availability status : Indent 2-3 Weeks\n\nPAYMENT TERMS:\n• Price Offer valid: 7 Days.\n• 70% down payment upon receipt of the purchase order.\n• We will send a proforma invoice for the down payment.\n• The remaining 30% is due upon receipt of the goods in good condition.\n• The delivery process for pre-order items is usually faster than the stated time, but depends on field conditions.';
@@ -134,7 +118,7 @@ function displayDateToDbDate(value: string) {
 }
 
 function dbDateToDisplayDate(value?: string | null) {
-  if (!value) return '-';
+  if (!value) return getTodayDisplayDate();
 
   if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
 
@@ -334,7 +318,6 @@ function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
 
   useEffect(() => {
     const editor = editorRef.current;
-
     if (!editor) return;
 
     const normalized = sanitizeHtml(value || '');
@@ -400,7 +383,7 @@ function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
     saveSelection();
   }
 
-  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
+  function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
 
     const text = event.clipboardData.getData('text/plain');
@@ -415,38 +398,38 @@ function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const showPlaceholder = !stripHtmlToText(value) && !focused;
 
   return (
-    <div style={styles.richEditorBox}>
+    <div className="rich-editor-box">
       <div
-        style={styles.richToolbar}
+        className="rich-toolbar"
         onMouseDown={(event) => {
           event.preventDefault();
         }}
       >
-        <button type="button" style={styles.editorButton} onClick={() => exec('bold')}>
+        <button type="button" className="editor-button" onClick={() => exec('bold')}>
           <b>B</b>
         </button>
-        <button type="button" style={styles.editorButton} onClick={() => exec('italic')}>
+        <button type="button" className="editor-button" onClick={() => exec('italic')}>
           <i>I</i>
         </button>
-        <button type="button" style={styles.editorButton} onClick={() => exec('underline')}>
+        <button type="button" className="editor-button" onClick={() => exec('underline')}>
           <u>U</u>
         </button>
-        <button type="button" style={styles.editorButton} onClick={() => exec('strikeThrough')}>
+        <button type="button" className="editor-button" onClick={() => exec('strikeThrough')}>
           <span style={{ textDecoration: 'line-through' }}>S</span>
         </button>
-        <button type="button" style={styles.editorTextButton} onClick={() => exec('insertUnorderedList')}>
+        <button type="button" className="editor-text-button" onClick={() => exec('insertUnorderedList')}>
           • List
         </button>
-        <button type="button" style={styles.editorTextButton} onClick={() => exec('insertOrderedList')}>
+        <button type="button" className="editor-text-button" onClick={() => exec('insertOrderedList')}>
           1. List
         </button>
-        <button type="button" style={styles.editorTextButton} onClick={toggleAllCaps}>
+        <button type="button" className="editor-text-button" onClick={toggleAllCaps}>
           ABC
         </button>
       </div>
 
-      <div style={styles.editorContentWrap}>
-        {showPlaceholder ? <div style={styles.editorPlaceholder}>{placeholder}</div> : null}
+      <div className="editor-content-wrap">
+        {showPlaceholder ? <div className="editor-placeholder">{placeholder}</div> : null}
 
         <div
           ref={editorRef}
@@ -462,7 +445,7 @@ function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
           onMouseUp={saveSelection}
           onKeyUp={saveSelection}
           onPaste={handlePaste}
-          style={styles.richEditor}
+          className="rich-editor"
         />
       </div>
     </div>
@@ -494,11 +477,8 @@ export default function QuotationsPage() {
   const [priority, setPriority] = useState('CUSTOMER PRIORITY');
   const [terms, setTerms] = useState(DEFAULT_TERMS);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [taxPercent, setTaxPercent] = useState(0);
+  const [taxPercent, setTaxPercent] = useState(11);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  const [logoPrintSrc, setLogoPrintSrc] = useState(LOGO_OPTIONS[0].value);
-  const [addressImageSrc, setAddressImageSrc] = useState(ADDRESS_OPTIONS[0].value);
 
   const [items, setItems] = useState<QuoteItem[]>([
     {
@@ -516,7 +496,6 @@ export default function QuotationsPage() {
   const [message, setMessage] = useState('');
 
   const selectedCustomer = useMemo(() => customers.find((customer) => customer.id === customerId), [customers, customerId]);
-  const selectedContact = useMemo(() => contacts.find((contact) => contact.customer_id === customerId), [contacts, customerId]);
 
   const customerName = selectedCustomer?.customer_legal_name || selectedCustomer?.customer_name || '';
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.qty * item.price, 0), [items]);
@@ -555,20 +534,6 @@ export default function QuotationsPage() {
   }, []);
 
   useEffect(() => {
-    const contactName =
-      selectedContact?.contact_name ||
-      selectedContact?.full_name ||
-      selectedContact?.name ||
-      selectedCustomer?.customer_name ||
-      '';
-
-    if (customerId) {
-      setAttention(contactName);
-      setAddress(formatAddressForQuotation(selectedCustomer?.billing_address || ''));
-    }
-  }, [customerId, selectedContact, selectedCustomer]);
-
-  useEffect(() => {
     const status = items.find((item) => item.status.trim())?.status.trim();
 
     if (!status) return;
@@ -576,6 +541,7 @@ export default function QuotationsPage() {
     setTerms((prev) => {
       const lines = prev.split('\n');
       lines[0] = `Item availability status : ${status}`;
+
       return lines.join('\n');
     });
   }, [items]);
@@ -793,7 +759,7 @@ export default function QuotationsPage() {
     setPriority('CUSTOMER PRIORITY');
     setTerms(DEFAULT_TERMS);
     setDiscountAmount(0);
-    setTaxPercent(0);
+    setTaxPercent(11);
     setEditingId(null);
     setItems([
       {
@@ -830,7 +796,7 @@ export default function QuotationsPage() {
     setCustomerId(quotation.customer_id || '');
     setAttention(quotation.attention_snapshot || '');
     setDiscountAmount(Number(quotation.discount_value || 0));
-    setTaxPercent(Number(quotation.tax_percent || 0));
+    setTaxPercent(Number(quotation.tax_percent ?? 11));
 
     const customer = customers.find((row) => row.id === quotation.customer_id);
 
@@ -874,7 +840,7 @@ export default function QuotationsPage() {
 
     setTimeout(() => {
       window.print();
-    }, 250);
+    }, 350);
   }
 
   async function handlePrint() {
@@ -893,45 +859,48 @@ export default function QuotationsPage() {
 
   return (
     <AppShell activeMenu="Quotations">
-      <main style={styles.page}>
-        <section style={styles.topHeader}>
+      <main className="quotation-page">
+        <section className="top-header">
           <div>
-            <div style={styles.kicker}>SALES-APP / MARKETING / SALES</div>
-            <h1 style={styles.title}>Quotation</h1>
+            <div className="kicker">SALES-APP / MARKETING / SALES</div>
+            <h1 className="page-title">Quotation</h1>
+            <p className="page-subtitle">Buat quotation dari customer dan product master.</p>
           </div>
+
+          <img src={LOGO_SRC} alt="Company Logo" className="header-logo" />
         </section>
 
         {message ? (
-          <div style={message.toLowerCase().includes('berhasil') ? styles.successBox : styles.errorBox}>
+          <div className={message.toLowerCase().includes('berhasil') ? 'success-box' : 'error-box'}>
             {message}
           </div>
         ) : null}
 
-        <section style={styles.card}>
-          <div style={styles.formGrid}>
-            <label style={styles.label}>
+        <section className="content-card">
+          <div className="form-grid">
+            <label className="field-label">
               QUOTE NO.#
-              <div style={styles.quoteInputRow}>
+              <div className="quote-input-row">
                 <input
                   value={quoteNo}
                   onChange={(event) => setQuoteNo(event.target.value)}
-                  style={styles.input}
+                  className="input"
                   placeholder="Auto jika kosong"
                 />
-                <button type="button" onClick={loadQuotationByQuoteNo} style={styles.loadButton}>
+                <button type="button" onClick={loadQuotationByQuoteNo} className="load-button">
                   Load
                 </button>
               </div>
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               DATE
-              <input value={quoteDate} onChange={(event) => handleDateChange(event.target.value)} style={styles.input} />
+              <input value={quoteDate} onChange={(event) => handleDateChange(event.target.value)} className="input" />
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               CUSTOMER
-              <select value={customerId} onChange={(event) => handleCustomerChange(event.target.value)} style={styles.input}>
+              <select value={customerId} onChange={(event) => handleCustomerChange(event.target.value)} className="input">
                 <option value="">Pilih customer</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
@@ -941,69 +910,67 @@ export default function QuotationsPage() {
               </select>
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               LOGO PRINT
-              <select value={logoPrintSrc} onChange={(event) => setLogoPrintSrc(event.target.value)} style={styles.input}>
-                {LOGO_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+              <select value={LOGO_SRC} className="input" disabled>
+                <option value={LOGO_SRC}>CBI Logo Default</option>
               </select>
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               ADDRESS IMAGE
-              <select value={addressImageSrc} onChange={(event) => setAddressImageSrc(event.target.value)} style={styles.input}>
-                {ADDRESS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+              <select value={ADDRESS_IMAGE_SRC} className="input" disabled>
+                <option value={ADDRESS_IMAGE_SRC}>Address Default</option>
               </select>
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               DEAR
-              <input value={attention} onChange={(event) => setAttention(event.target.value)} style={styles.input} />
+              <input value={attention} onChange={(event) => setAttention(event.target.value)} className="input" />
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label">
               CUSTOMER PRIORITY
-              <input value={priority} onChange={(event) => setPriority(event.target.value)} style={styles.input} />
+              <input value={priority} onChange={(event) => setPriority(event.target.value)} className="input" />
             </label>
 
-            <label style={styles.label}>
+            <label className="field-label field-full">
               ADDRESS
-              <textarea value={address} onChange={(event) => setAddress(event.target.value)} style={styles.addressTextarea} />
+              <textarea value={address} onChange={(event) => setAddress(event.target.value)} className="address-textarea" />
             </label>
           </div>
 
-          <section style={styles.itemsSection}>
-            <div style={styles.sectionLabel}>Items</div>
+          <section className="items-section">
+            <div className="section-title">Items</div>
 
-            <div style={styles.itemsTableWrap}>
-              <table style={styles.itemsTable}>
+            <div className="items-table-wrap">
+              <table className="items-table">
                 <thead>
                   <tr>
-                    <th style={styles.thNo}>No</th>
-                    <th style={styles.thProduct}>Product</th>
-                    <th style={styles.thSpec}>Detail Spec</th>
-                    <th style={styles.thQty}>Qty</th>
-                    <th style={styles.thPrice}>Price (IDR)</th>
-                    <th style={styles.thTotal}>Total (IDR)</th>
-                    <th style={styles.thStatus}>Status</th>
-                    <th style={styles.thAction}>Action</th>
+                    <th>No</th>
+                    <th>Product</th>
+                    <th>Detail Spec</th>
+                    <th>Qty</th>
+                    <th>Price IDR</th>
+                    <th>Total IDR</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {items.map((item, index) => (
                     <tr key={item.id}>
-                      <td style={styles.td}>{index + 1}</td>
+                      <td data-label="No" className="td-no">
+                        {index + 1}
+                      </td>
 
-                      <td style={styles.td}>
-                        <select value={item.productId || ''} onChange={(event) => selectProduct(item.id, event.target.value)} style={styles.productSelect}>
+                      <td data-label="Product">
+                        <select
+                          value={item.productId || ''}
+                          onChange={(event) => selectProduct(item.id, event.target.value)}
+                          className="product-select"
+                        >
                           <option value="">Manual</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
@@ -1013,7 +980,7 @@ export default function QuotationsPage() {
                         </select>
                       </td>
 
-                      <td style={styles.tdSpec}>
+                      <td data-label="Detail Spec" className="td-spec">
                         <RichTextEditor
                           value={item.description}
                           onChange={(nextValue) => updateItem(item.id, { description: nextValue })}
@@ -1021,34 +988,41 @@ export default function QuotationsPage() {
                         />
                       </td>
 
-                      <td style={styles.td}>
+                      <td data-label="Qty">
                         <input
                           type="number"
                           min={0}
                           value={item.qty}
                           onChange={(event) => updateItem(item.id, { qty: toNumber(event.target.value) })}
-                          style={styles.qtyInput}
+                          className="number-input"
                         />
                       </td>
 
-                      <td style={styles.td}>
+                      <td data-label="Price IDR">
                         <input
                           type="number"
                           min={0}
                           value={item.price}
                           onChange={(event) => updateItem(item.id, { price: toNumber(event.target.value) })}
-                          style={styles.priceInput}
+                          className="price-input"
                         />
                       </td>
 
-                      <td style={styles.tdTotalValue}>{formatCurrency(item.qty * item.price)}</td>
-
-                      <td style={styles.td}>
-                        <input value={item.status} onChange={(event) => updateItem(item.id, { status: event.target.value })} style={styles.statusInput} />
+                      <td data-label="Total IDR" className="total-cell">
+                        {formatCurrency(item.qty * item.price)}
                       </td>
 
-                      <td style={styles.tdAction}>
-                        <button type="button" onClick={() => removeItem(item.id)} style={styles.removeButton}>
+                      <td data-label="Status">
+                        <input
+                          value={item.status}
+                          onChange={(event) => updateItem(item.id, { status: event.target.value })}
+                          className="status-input"
+                          placeholder="Indent 2-3 Weeks"
+                        />
+                      </td>
+
+                      <td data-label="Action">
+                        <button type="button" onClick={() => removeItem(item.id)} className="remove-button">
                           Remove
                         </button>
                       </td>
@@ -1058,67 +1032,67 @@ export default function QuotationsPage() {
               </table>
             </div>
 
-            <div style={styles.addItemWrap}>
-              <button type="button" onClick={addItem} style={styles.addItemButton}>
+            <div className="add-item-wrap">
+              <button type="button" onClick={addItem} className="add-item-button">
                 Add Item
               </button>
             </div>
           </section>
 
-          <section style={styles.bottomGrid}>
-            <div>
-              <div style={styles.sectionLabel}>Terms & Conditions</div>
-              <textarea value={terms} onChange={(event) => setTerms(event.target.value)} style={styles.termsTextarea} />
+          <section className="bottom-grid">
+            <div className="terms-panel">
+              <div className="section-title">Terms & Conditions</div>
+              <textarea value={terms} onChange={(event) => setTerms(event.target.value)} className="terms-textarea" />
             </div>
 
-            <div style={styles.summaryBox}>
-              <div style={styles.summaryRow}>
+            <div className="summary-box">
+              <div className="summary-row">
                 <span>Subtotal</span>
                 <b>{formatCurrency(subtotal)}</b>
               </div>
 
-              <div style={styles.summaryRow}>
+              <div className="summary-row">
                 <span>Discount</span>
                 <input
                   type="number"
                   min={0}
                   value={discountAmount}
                   onChange={(event) => setDiscountAmount(toNumber(event.target.value))}
-                  style={styles.summaryInput}
+                  className="summary-input"
                 />
               </div>
 
-              <div style={styles.summaryRow}>
+              <div className="summary-row">
                 <span>Tax (%)</span>
                 <input
                   type="number"
                   min={0}
                   value={taxPercent}
                   onChange={(event) => setTaxPercent(toNumber(event.target.value))}
-                  style={styles.summaryInput}
+                  className="summary-input"
                 />
               </div>
 
-              <div style={styles.summaryDivider} />
+              <div className="summary-divider" />
 
-              <div style={styles.grandRow}>
+              <div className="grand-row">
                 <span>Grand Total</span>
                 <b>{formatCurrency(grandTotal)}</b>
               </div>
 
-              <div style={styles.inWordsLabel}>In words</div>
-              <div style={styles.inWordsBox}>{inWords}</div>
+              <div className="in-words-label">In words</div>
+              <div className="in-words-box">{inWords}</div>
 
-              <div style={styles.summaryActions}>
-                <button type="button" onClick={saveQuotation} style={styles.secondaryButton} disabled={quoteLoading || loading}>
-                  {editingId ? 'Update' : 'Save'}
+              <div className="summary-actions">
+                <button type="button" onClick={saveQuotation} className="secondary-button" disabled={quoteLoading || loading}>
+                  {quoteLoading ? 'Saving...' : editingId ? 'Update' : 'Save'}
                 </button>
 
-                <button type="button" onClick={resetForm} style={styles.secondaryButton} disabled={quoteLoading}>
+                <button type="button" onClick={resetForm} className="secondary-button" disabled={quoteLoading}>
                   New
                 </button>
 
-                <button type="button" onClick={handlePrint} style={styles.printButton}>
+                <button type="button" onClick={handlePrint} className="print-button">
                   Print
                 </button>
               </div>
@@ -1126,42 +1100,63 @@ export default function QuotationsPage() {
           </section>
         </section>
 
-        <section style={styles.card}>
-          <div style={styles.sectionLabel}>Quotation List</div>
+        <section className="content-card">
+          <div className="list-header">
+            <div>
+              <h2>Quotation List</h2>
+              <p>Daftar quotation yang sudah tersimpan.</p>
+            </div>
 
-          <div style={styles.quoteListWrap}>
-            <table style={styles.quoteListTable}>
+            <button type="button" onClick={loadData} className="refresh-button" disabled={loading}>
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+
+          <div className="quotation-list-wrap">
+            <table className="quotation-table">
               <thead>
                 <tr>
-                  <th style={styles.quoteTh}>Quote No</th>
-                  <th style={styles.quoteTh}>Date</th>
-                  <th style={styles.quoteTh}>Customer</th>
-                  <th style={styles.quoteTh}>Total</th>
-                  <th style={styles.quoteThAction}>Action</th>
+                  <th>No</th>
+                  <th>Quotation No</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Attention</th>
+                  <th>Grand Total</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
 
               <tbody>
                 {quotationList.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={styles.emptyTd}>
-                      Belum ada quotation tersimpan.
+                    <td colSpan={8} className="empty-cell">
+                      Belum ada quotation.
                     </td>
                   </tr>
                 ) : (
-                  quotationList.map((quotation) => (
+                  quotationList.map((quotation, index) => (
                     <tr key={quotation.id}>
-                      <td style={styles.quoteTdBold}>{quotation.quotation_number || '-'}</td>
-                      <td style={styles.quoteTd}>{dbDateToDisplayDate(quotation.quote_date)}</td>
-                      <td style={styles.quoteTd}>{quotation.customer_name_snapshot || '-'}</td>
-                      <td style={styles.quoteTdBold}>{formatCurrency(Number(quotation.grand_total || 0))}</td>
-                      <td style={styles.quoteTdAction}>
-                        <button type="button" onClick={() => applyQuotation(quotation)} style={styles.listEditButton}>
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => printQuotation(quotation)} style={styles.listPrintButton}>
-                          Print
-                        </button>
+                      <td data-label="No">{index + 1}</td>
+                      <td data-label="Quotation No">
+                        <strong>{quotation.quotation_number || '-'}</strong>
+                      </td>
+                      <td data-label="Date">{dbDateToDisplayDate(quotation.quote_date)}</td>
+                      <td data-label="Customer">{quotation.customer_name_snapshot || '-'}</td>
+                      <td data-label="Attention">{quotation.attention_snapshot || '-'}</td>
+                      <td data-label="Grand Total">Rp {formatCurrency(Number(quotation.grand_total || 0))}</td>
+                      <td data-label="Status">
+                        <span className="status-pill">{quotation.status || 'Simpan'}</span>
+                      </td>
+                      <td data-label="Action">
+                        <div className="list-actions">
+                          <button type="button" onClick={() => applyQuotation(quotation)} className="edit-button">
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => printQuotation(quotation)} className="print-small-button">
+                            Print
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1179,8 +1174,8 @@ export default function QuotationsPage() {
           address={address}
           priority={priority}
           terms={terms}
-          logoSrc={logoPrintSrc}
-          addressImageSrc={addressImageSrc}
+          logoSrc={LOGO_SRC}
+          addressImageSrc={ADDRESS_IMAGE_SRC}
           items={items}
           subtotal={subtotal}
           discountValue={discountValue}
@@ -1192,541 +1187,854 @@ export default function QuotationsPage() {
           getProductName={(item) => getItemProductName(item, productsById)}
           getDetailSpec={getItemDetailSpec}
         />
+
+        <style jsx>{`
+          .quotation-page {
+            min-height: 100%;
+            background: #dfe8f2;
+            color: #062b52;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow-x: hidden;
+          }
+
+          .top-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 18px;
+          }
+
+          .kicker {
+            color: #3b6fa5;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+          }
+
+          .page-title {
+            margin: 0;
+            font-size: 40px;
+            line-height: 1;
+            font-weight: 400;
+            color: #062b52;
+          }
+
+          .page-subtitle {
+            margin: 10px 0 0;
+            color: #506f90;
+            font-size: 17px;
+            line-height: 1.35;
+          }
+
+          .header-logo {
+            width: 150px;
+            max-width: 28%;
+            height: auto;
+            object-fit: contain;
+          }
+
+          .success-box,
+          .error-box {
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            font-weight: 800;
+            line-height: 1.35;
+          }
+
+          .success-box {
+            background: #e9f9ef;
+            border: 1px solid #bce8ce;
+            color: #08753b;
+          }
+
+          .error-box {
+            background: #fff0f0;
+            border: 1px solid #ffc5c5;
+            color: #b00020;
+          }
+
+          .content-card {
+            background: #ffffff;
+            border: 1px solid #d8e3ef;
+            border-radius: 22px;
+            padding: 24px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-sizing: border-box;
+          }
+
+          .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+          }
+
+          .field-full {
+            grid-column: span 3;
+          }
+
+          .field-label {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #4f6480;
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            min-width: 0;
+          }
+
+          .input,
+          .address-textarea,
+          .terms-textarea,
+          .summary-input,
+          .product-select,
+          .number-input,
+          .price-input,
+          .status-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cfdceb;
+            border-radius: 13px;
+            background: #ffffff;
+            color: #062b52;
+            outline: none;
+            font-size: 15px;
+            font-family: Arial, Helvetica, sans-serif;
+          }
+
+          .input {
+            height: 48px;
+            padding: 0 14px;
+          }
+
+          .quote-input-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 76px;
+            gap: 10px;
+          }
+
+          .load-button,
+          .refresh-button,
+          .secondary-button,
+          .print-button,
+          .edit-button,
+          .print-small-button,
+          .remove-button,
+          .add-item-button {
+            border: 0;
+            cursor: pointer;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 900;
+            border-radius: 13px;
+            transition: 0.15s ease;
+          }
+
+          .load-button {
+            background: #ffffff;
+            color: #062b52;
+            border: 1px solid #d5e0ec;
+            min-height: 48px;
+          }
+
+          .refresh-button {
+            background: #ffffff;
+            color: #075a9f;
+            border: 1px solid #cfdceb;
+            padding: 12px 18px;
+            min-height: 44px;
+          }
+
+          .address-textarea {
+            min-height: 110px;
+            padding: 12px 14px;
+            resize: vertical;
+            line-height: 1.45;
+          }
+
+          .items-section {
+            margin-top: 8px;
+          }
+
+          .section-title {
+            font-size: 20px;
+            line-height: 1.2;
+            font-weight: 900;
+            margin-bottom: 12px;
+            color: #062b52;
+          }
+
+          .items-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #d8e3ef;
+            border-radius: 18px;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .items-table {
+            width: 100%;
+            min-width: 1080px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 13px;
+          }
+
+          .items-table th {
+            background: #f4f8fc;
+            border-bottom: 1px solid #d8e3ef;
+            color: #193a5b;
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+          }
+
+          .items-table th:nth-child(1) {
+            width: 52px;
+          }
+
+          .items-table th:nth-child(2) {
+            width: 190px;
+          }
+
+          .items-table th:nth-child(3) {
+            width: 380px;
+          }
+
+          .items-table th:nth-child(4) {
+            width: 85px;
+          }
+
+          .items-table th:nth-child(5),
+          .items-table th:nth-child(6) {
+            width: 145px;
+          }
+
+          .items-table th:nth-child(7) {
+            width: 160px;
+          }
+
+          .items-table th:nth-child(8) {
+            width: 120px;
+          }
+
+          .items-table td {
+            border-bottom: 1px solid #edf2f7;
+            padding: 12px;
+            vertical-align: top;
+            color: #173b5f;
+          }
+
+          .td-no {
+            font-weight: 900;
+          }
+
+          .product-select {
+            height: 44px;
+            padding: 0 12px;
+          }
+
+          .number-input,
+          .price-input,
+          .status-input {
+            height: 42px;
+            padding: 0 10px;
+          }
+
+          .total-cell {
+            font-weight: 900;
+            white-space: nowrap;
+          }
+
+          .rich-editor-box {
+            border: 1px solid #cfdceb;
+            border-radius: 14px;
+            background: #ffffff;
+            overflow: hidden;
+          }
+
+          .rich-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            border-bottom: 1px solid #dbe5ef;
+            background: #f7fbff;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .editor-button,
+          .editor-text-button {
+            border: 1px solid #cfdceb;
+            background: #ffffff;
+            color: #062b52;
+            border-radius: 9px;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            flex: 0 0 auto;
+          }
+
+          .editor-content-wrap {
+            position: relative;
+          }
+
+          .editor-placeholder {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            color: #8a9bad;
+            pointer-events: none;
+            font-size: 13px;
+            line-height: 1.45;
+          }
+
+          .rich-editor {
+            min-height: 120px;
+            padding: 12px;
+            color: #062b52;
+            outline: none;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+          }
+
+          .add-item-wrap {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 14px;
+          }
+
+          .add-item-button {
+            background: #0a2f52;
+            color: #ffffff;
+            padding: 13px 24px;
+            min-height: 46px;
+          }
+
+          .bottom-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 0.45fr);
+            gap: 18px;
+            margin-top: 24px;
+            align-items: start;
+          }
+
+          .terms-textarea {
+            min-height: 185px;
+            padding: 14px;
+            resize: vertical;
+            line-height: 1.45;
+          }
+
+          .summary-box {
+            border: 1px solid #d8e3ef;
+            border-radius: 18px;
+            padding: 18px;
+            background: #fbfdff;
+          }
+
+          .summary-row,
+          .grand-row {
+            display: grid;
+            grid-template-columns: 120px minmax(0, 1fr);
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+            color: #344d68;
+            font-size: 15px;
+          }
+
+          .summary-row b,
+          .grand-row b {
+            text-align: right;
+            color: #062b52;
+            font-weight: 900;
+          }
+
+          .summary-input {
+            height: 42px;
+            padding: 0 12px;
+            text-align: right;
+          }
+
+          .summary-divider {
+            height: 1px;
+            background: #d8e3ef;
+            margin: 16px 0;
+          }
+
+          .grand-row {
+            color: #111827;
+            font-size: 17px;
+            font-weight: 900;
+          }
+
+          .in-words-label {
+            color: #667890;
+            font-size: 13px;
+            margin-bottom: 8px;
+          }
+
+          .in-words-box {
+            border: 1px solid #d8e3ef;
+            border-radius: 12px;
+            min-height: 42px;
+            padding: 11px 12px;
+            color: #062b52;
+            font-size: 14px;
+            line-height: 1.35;
+            background: #ffffff;
+          }
+
+          .summary-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+          }
+
+          .secondary-button {
+            background: #ffffff;
+            border: 1px solid #d8e3ef;
+            color: #24364b;
+            min-height: 44px;
+            padding: 0 18px;
+          }
+
+          .print-button {
+            background: #0a2f52;
+            color: #ffffff;
+            min-height: 44px;
+            padding: 0 22px;
+          }
+
+          .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+          }
+
+          .list-header h2 {
+            margin: 0;
+            color: #062b52;
+            font-size: 24px;
+            line-height: 1.2;
+          }
+
+          .list-header p {
+            margin: 6px 0 0;
+            color: #58708b;
+            font-size: 14px;
+            line-height: 1.35;
+          }
+
+          .quotation-list-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #d8e3ef;
+            border-radius: 16px;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .quotation-table {
+            width: 100%;
+            min-width: 940px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 13px;
+          }
+
+          .quotation-table th {
+            background: #f4f8fc;
+            border-bottom: 1px solid #d8e3ef;
+            text-align: left;
+            padding: 13px 14px;
+            color: #193a5b;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.35px;
+          }
+
+          .quotation-table td {
+            border-bottom: 1px solid #edf2f7;
+            padding: 13px 14px;
+            color: #173b5f;
+            vertical-align: top;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .quotation-table tr:last-child td {
+            border-bottom: 0;
+          }
+
+          .empty-cell {
+            text-align: center;
+            padding: 24px !important;
+            color: #60758c !important;
+            font-weight: 800;
+          }
+
+          .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #e8f8ef;
+            color: #087a3d;
+            padding: 6px 11px;
+            font-size: 12px;
+            font-weight: 900;
+          }
+
+          .list-actions {
+            display: flex;
+            gap: 8px;
+          }
+
+          .edit-button,
+          .print-small-button {
+            min-height: 36px;
+            padding: 0 12px;
+            font-size: 12px;
+          }
+
+          .edit-button {
+            background: #0b78d0;
+            color: #ffffff;
+          }
+
+          .print-small-button {
+            background: #0a2f52;
+            color: #ffffff;
+          }
+
+          .remove-button {
+            background: #fff0f0;
+            color: #b00020;
+            border: 1px solid #ffcaca;
+            min-height: 38px;
+            padding: 0 12px;
+          }
+
+          @media (max-width: 1100px) {
+            .form-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .field-full {
+              grid-column: span 2;
+            }
+
+            .bottom-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+
+          @media (max-width: 820px) {
+            .quotation-page {
+              overflow-x: hidden;
+            }
+
+            .top-header {
+              flex-direction: column;
+              gap: 10px;
+              margin-bottom: 14px;
+            }
+
+            .header-logo {
+              display: none;
+            }
+
+            .kicker {
+              font-size: 12px;
+              margin-bottom: 6px;
+            }
+
+            .page-title {
+              font-size: 34px;
+            }
+
+            .page-subtitle {
+              font-size: 15px;
+              margin-top: 8px;
+            }
+
+            .content-card {
+              border-radius: 18px;
+              padding: 16px;
+              margin-bottom: 16px;
+            }
+
+            .form-grid {
+              grid-template-columns: 1fr;
+              gap: 13px;
+              margin-bottom: 18px;
+            }
+
+            .field-full {
+              grid-column: span 1;
+            }
+
+            .field-label {
+              font-size: 12px;
+              gap: 7px;
+            }
+
+            .input {
+              height: 48px;
+              font-size: 15px;
+            }
+
+            .quote-input-row {
+              grid-template-columns: minmax(0, 1fr) 72px;
+              gap: 8px;
+            }
+
+            .address-textarea {
+              min-height: 120px;
+            }
+
+            .section-title {
+              font-size: 18px;
+              margin-bottom: 10px;
+            }
+
+            .items-table-wrap,
+            .quotation-list-wrap {
+              border: 0;
+              border-radius: 0;
+              overflow: visible;
+            }
+
+            .items-table,
+            .quotation-table {
+              min-width: 0;
+              width: 100%;
+              display: block;
+            }
+
+            .items-table thead,
+            .quotation-table thead {
+              display: none;
+            }
+
+            .items-table tbody,
+            .quotation-table tbody {
+              display: flex;
+              flex-direction: column;
+              gap: 14px;
+            }
+
+            .items-table tr,
+            .quotation-table tr {
+              display: block;
+              width: 100%;
+              border: 1px solid #d8e3ef;
+              border-radius: 16px;
+              background: #f8fbff;
+              overflow: hidden;
+              box-shadow: 0 8px 18px rgba(34, 79, 126, 0.05);
+            }
+
+            .items-table td,
+            .quotation-table td {
+              display: grid;
+              grid-template-columns: 110px minmax(0, 1fr);
+              gap: 10px;
+              align-items: start;
+              padding: 11px 12px;
+              border-bottom: 1px solid #e4edf6;
+              overflow: visible;
+              text-overflow: unset;
+              white-space: normal;
+              word-break: break-word;
+              line-height: 1.35;
+            }
+
+            .items-table td:last-child,
+            .quotation-table td:last-child {
+              border-bottom: 0;
+            }
+
+            .items-table td::before,
+            .quotation-table td::before {
+              content: attr(data-label);
+              color: #5d7186;
+              font-size: 12px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+
+            .td-spec {
+              display: block !important;
+            }
+
+            .td-spec::before {
+              display: block;
+              margin-bottom: 8px;
+            }
+
+            .rich-toolbar {
+              flex-wrap: nowrap;
+              overflow-x: auto;
+            }
+
+            .rich-editor {
+              min-height: 150px;
+              font-size: 14px;
+            }
+
+            .product-select,
+            .number-input,
+            .price-input,
+            .status-input {
+              height: 42px;
+              font-size: 14px;
+            }
+
+            .add-item-wrap {
+              justify-content: stretch;
+            }
+
+            .add-item-button {
+              width: 100%;
+            }
+
+            .bottom-grid {
+              grid-template-columns: 1fr;
+              gap: 16px;
+              margin-top: 18px;
+            }
+
+            .terms-textarea {
+              min-height: 180px;
+              font-size: 14px;
+            }
+
+            .summary-box {
+              padding: 16px;
+              border-radius: 16px;
+            }
+
+            .summary-row,
+            .grand-row {
+              grid-template-columns: 1fr;
+              gap: 7px;
+              margin-bottom: 14px;
+            }
+
+            .summary-row b,
+            .grand-row b {
+              text-align: left;
+            }
+
+            .summary-input {
+              text-align: left;
+            }
+
+            .summary-actions {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 8px;
+            }
+
+            .secondary-button,
+            .print-button {
+              width: 100%;
+              padding: 0 10px;
+            }
+
+            .list-header {
+              flex-direction: column;
+              align-items: stretch;
+              gap: 12px;
+            }
+
+            .refresh-button {
+              width: 100%;
+            }
+
+            .list-actions {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              width: 100%;
+              gap: 8px;
+            }
+
+            .edit-button,
+            .print-small-button,
+            .remove-button {
+              width: 100%;
+            }
+
+            .empty-cell {
+              display: block !important;
+              text-align: center;
+            }
+
+            .empty-cell::before {
+              display: none;
+            }
+          }
+
+          @media (max-width: 430px) {
+            .content-card {
+              padding: 14px;
+            }
+
+            .page-title {
+              font-size: 32px;
+            }
+
+            .items-table td,
+            .quotation-table td {
+              grid-template-columns: 96px minmax(0, 1fr);
+              gap: 8px;
+              padding: 10px;
+            }
+
+            .items-table td::before,
+            .quotation-table td::before {
+              font-size: 11px;
+            }
+
+            .quote-input-row {
+              grid-template-columns: 1fr;
+            }
+
+            .load-button {
+              width: 100%;
+            }
+
+            .summary-actions {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
       </main>
     </AppShell>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  page: {
-    minHeight: '100%',
-    background: 'transparent',
-    padding: 0,
-    color: '#1f2937',
-    fontFamily: 'Arial, sans-serif',
-    overflowX: 'hidden',
-    boxSizing: 'border-box',
-  },
-  topHeader: {
-    display: 'block',
-    marginBottom: 22,
-    background: 'transparent',
-    padding: 0,
-  },
-  kicker: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#6b7280',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  title: {
-    margin: 0,
-    fontSize: 28,
-    lineHeight: 1.1,
-    color: '#111827',
-    fontWeight: 700,
-  },
-  card: {
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 18,
-    padding: 24,
-    marginBottom: 24,
-    boxShadow: '0 18px 40px rgba(15, 23, 42, 0.04)',
-    boxSizing: 'border-box',
-  },
-  formGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '22px 20px',
-  },
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 7,
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-  },
-  input: {
-    height: 42,
-    borderRadius: 11,
-    border: '1px solid #d1d5db',
-    background: '#ffffff',
-    color: '#111827',
-    padding: '0 14px',
-    fontSize: 14,
-    outline: 'none',
-    boxSizing: 'border-box',
-    width: '100%',
-    textTransform: 'none',
-    fontWeight: 400,
-  },
-  quoteInputRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 56px',
-    gap: 8,
-  },
-  loadButton: {
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    color: '#374151',
-    borderRadius: 11,
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  addressTextarea: {
-    minHeight: 96,
-    borderRadius: 11,
-    border: '1px solid #d1d5db',
-    background: '#ffffff',
-    color: '#111827',
-    padding: '12px 14px',
-    fontSize: 14,
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'Arial, sans-serif',
-    lineHeight: 1.5,
-    boxSizing: 'border-box',
-    width: '100%',
-    textTransform: 'none',
-    fontWeight: 400,
-  },
-  itemsSection: {
-    marginTop: 28,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: '#111827',
-    marginBottom: 12,
-  },
-  itemsTableWrap: {
-    border: '1px solid #e5e7eb',
-    borderRadius: 16,
-    overflowX: 'auto',
-    background: '#ffffff',
-  },
-  itemsTable: {
-    width: '100%',
-    minWidth: 1120,
-    borderCollapse: 'collapse',
-    tableLayout: 'fixed',
-    fontSize: 14,
-  },
-  thNo: {
-    width: 54,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thProduct: {
-    width: 230,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thSpec: {
-    width: 380,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thQty: {
-    width: 110,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thPrice: {
-    width: 150,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thTotal: {
-    width: 150,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thStatus: {
-    width: 170,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  thAction: {
-    width: 115,
-    padding: '14px 14px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'right',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  td: {
-    padding: '16px 14px',
-    borderBottom: '1px solid #f1f5f9',
-    verticalAlign: 'middle',
-    color: '#111827',
-  },
-  tdSpec: {
-    padding: '16px 14px',
-    borderBottom: '1px solid #f1f5f9',
-    verticalAlign: 'top',
-    color: '#111827',
-  },
-  tdTotalValue: {
-    padding: '16px 14px',
-    borderBottom: '1px solid #f1f5f9',
-    verticalAlign: 'middle',
-    color: '#111827',
-    fontWeight: 700,
-  },
-  tdAction: {
-    padding: '16px 14px',
-    borderBottom: '1px solid #f1f5f9',
-    verticalAlign: 'middle',
-    textAlign: 'right',
-  },
-  productSelect: {
-    width: '100%',
-    height: 42,
-    borderRadius: 10,
-    border: '1px solid #d1d5db',
-    padding: '0 12px',
-    background: '#ffffff',
-    color: '#111827',
-    outline: 'none',
-  },
-  qtyInput: {
-    width: 84,
-    height: 42,
-    borderRadius: 10,
-    border: '1px solid #d1d5db',
-    padding: '0 12px',
-    outline: 'none',
-  },
-  priceInput: {
-    width: 140,
-    height: 42,
-    borderRadius: 10,
-    border: '1px solid #d1d5db',
-    padding: '0 12px',
-    outline: 'none',
-  },
-  statusInput: {
-    width: 160,
-    height: 42,
-    borderRadius: 10,
-    border: '1px solid #d1d5db',
-    padding: '0 12px',
-    outline: 'none',
-  },
-  removeButton: {
-    border: '1px solid #fee2e2',
-    background: '#ffffff',
-    color: '#dc2626',
-    borderRadius: 9,
-    padding: '8px 12px',
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  addItemWrap: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: 14,
-  },
-  addItemButton: {
-    border: 0,
-    background: '#17324d',
-    color: '#ffffff',
-    borderRadius: 12,
-    padding: '12px 18px',
-    fontSize: 14,
-    fontWeight: 800,
-    cursor: 'pointer',
-  },
-  bottomGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 520px',
-    gap: 24,
-    marginTop: 28,
-    alignItems: 'start',
-  },
-  termsTextarea: {
-    width: '100%',
-    minHeight: 180,
-    borderRadius: 12,
-    border: '1px solid #d1d5db',
-    padding: 14,
-    fontSize: 14,
-    fontFamily: 'Arial, sans-serif',
-    resize: 'vertical',
-    outline: 'none',
-    lineHeight: 1.5,
-    boxSizing: 'border-box',
-  },
-  summaryBox: {
-    background: '#fafafa',
-    border: '1px solid #e5e7eb',
-    borderRadius: 16,
-    padding: 18,
-    boxSizing: 'border-box',
-  },
-  summaryRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 20,
-    marginBottom: 14,
-    fontSize: 14,
-    color: '#4b5563',
-  },
-  summaryInput: {
-    width: 130,
-    height: 36,
-    textAlign: 'right',
-    borderRadius: 8,
-    border: '1px solid #d1d5db',
-    padding: '0 10px',
-    outline: 'none',
-    background: '#ffffff',
-  },
-  summaryDivider: {
-    height: 1,
-    background: '#e5e7eb',
-    margin: '18px 0',
-  },
-  grandRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 20,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#111827',
-  },
-  inWordsLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 6,
-  },
-  inWordsBox: {
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    borderRadius: 9,
-    padding: '8px 10px',
-    fontSize: 14,
-    color: '#111827',
-  },
-  summaryActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 18,
-  },
-  secondaryButton: {
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    color: '#374151',
-    borderRadius: 11,
-    padding: '10px 16px',
-    fontSize: 14,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  printButton: {
-    border: 0,
-    background: '#17324d',
-    color: '#ffffff',
-    borderRadius: 11,
-    padding: '10px 18px',
-    fontSize: 14,
-    fontWeight: 800,
-    cursor: 'pointer',
-  },
-  quoteListWrap: {
-    border: '1px solid #e5e7eb',
-    borderRadius: 16,
-    overflowX: 'auto',
-  },
-  quoteListTable: {
-    width: '100%',
-    minWidth: 760,
-    borderCollapse: 'collapse',
-    fontSize: 14,
-  },
-  quoteTh: {
-    padding: '14px 16px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'left',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  quoteThAction: {
-    padding: '14px 16px',
-    background: '#fafafa',
-    color: '#4b5563',
-    fontSize: 12,
-    fontWeight: 800,
-    textAlign: 'right',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  quoteTd: {
-    padding: '16px 16px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#111827',
-  },
-  quoteTdBold: {
-    padding: '16px 16px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#111827',
-    fontWeight: 800,
-  },
-  quoteTdAction: {
-    padding: '16px 16px',
-    borderBottom: '1px solid #f1f5f9',
-    textAlign: 'right',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  listEditButton: {
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    color: '#374151',
-    borderRadius: 8,
-    padding: '8px 12px',
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  listPrintButton: {
-    border: 0,
-    background: '#17324d',
-    color: '#ffffff',
-    borderRadius: 8,
-    padding: '8px 12px',
-    fontSize: 12,
-    fontWeight: 800,
-    cursor: 'pointer',
-  },
-  emptyTd: {
-    padding: 24,
-    textAlign: 'center',
-    color: '#6b7280',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  richEditorBox: {
-    border: '1px solid #d1d5db',
-    borderRadius: 10,
-    background: '#ffffff',
-    overflow: 'hidden',
-  },
-  richToolbar: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 5,
-    alignItems: 'center',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '8px 9px',
-    background: '#ffffff',
-  },
-  editorButton: {
-    minWidth: 28,
-    height: 28,
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    borderRadius: 6,
-    color: '#374151',
-    cursor: 'pointer',
-  },
-  editorTextButton: {
-    height: 28,
-    border: '1px solid #e5e7eb',
-    background: '#ffffff',
-    borderRadius: 6,
-    color: '#374151',
-    padding: '0 8px',
-    fontSize: 12,
-    cursor: 'pointer',
-  },
-  editorContentWrap: {
-    position: 'relative',
-  },
-  editorPlaceholder: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
-    color: '#9ca3af',
-    fontSize: 14,
-    lineHeight: 1.6,
-    pointerEvents: 'none',
-  },
-  richEditor: {
-    minHeight: 112,
-    padding: '12px 12px',
-    outline: 'none',
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: '#111827',
-    whiteSpace: 'pre-wrap',
-  },
-  successBox: {
-    background: '#ecfdf3',
-    color: '#08753b',
-    border: '1px solid #bbf7d0',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    fontWeight: 700,
-  },
-  errorBox: {
-    background: '#fff0f0',
-    color: '#b00020',
-    border: '1px solid #fecaca',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    fontWeight: 700,
-  },
-};

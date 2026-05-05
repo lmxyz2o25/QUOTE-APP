@@ -1,0 +1,11 @@
+{
+  "name": "quote-app",
+  "private": true,
+  "scripts": {
+    "install:all": "pnpm install --dir apps/web && pnpm install --dir apps/api",
+    "dev:web": "pnpm --dir apps/web dev",
+    "dev:api": "pnpm --dir apps/api run start:dev",
+    "build:web": "pnpm --dir apps/web build",
+    "build:api": "pnpm --dir apps/api build"
+  }
+}

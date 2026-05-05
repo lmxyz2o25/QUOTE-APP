@@ -358,6 +358,11 @@ export default function CustomerPoPage() {
     setPoNumber(row.poNumber !== '-' ? row.poNumber : '');
     setPoDate(row.poDate || todayInputDate());
     setSelectedFile(null);
+
+    setTimeout(() => {
+      const formElement = document.getElementById(`po-form-${row.id}`);
+      formElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -428,13 +433,11 @@ export default function CustomerPoPage() {
     const safeFileName = sanitizeFileName(file.name);
     const storagePath = `${row.id}/${Date.now()}-${safeFileName}`;
 
-    const uploadResult = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storagePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || undefined,
-      });
+    const uploadResult = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    });
 
     if (uploadResult.error) throw uploadResult.error;
 
@@ -497,10 +500,7 @@ export default function CustomerPoPage() {
       };
 
       if (existingPoId) {
-        const updateResult = await supabase
-          .from('customer_purchase_orders')
-          .update(payload)
-          .eq('id', existingPoId);
+        const updateResult = await supabase.from('customer_purchase_orders').update(payload).eq('id', existingPoId);
 
         if (updateResult.error) throw updateResult.error;
 
@@ -534,7 +534,7 @@ export default function CustomerPoPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell activeMenu="Customer PO">
       <main className="customer-po-page">
         <style>{`
           .customer-po-page {
@@ -579,6 +579,7 @@ export default function CustomerPoPage() {
             font-size: 16px;
             line-height: 1.45;
             font-weight: 400;
+            max-width: 720px;
           }
 
           .refresh-button {
@@ -649,6 +650,7 @@ export default function CustomerPoPage() {
             margin-bottom: 16px;
             font-size: 14px;
             font-weight: 700;
+            line-height: 1.35;
           }
 
           .alert-error {
@@ -697,7 +699,7 @@ export default function CustomerPoPage() {
           }
 
           .search-input {
-            width: min(280px, 100%);
+            width: min(310px, 100%);
             border: 1px solid #c8dced;
             border-radius: 12px;
             padding: 12px 14px;
@@ -715,10 +717,11 @@ export default function CustomerPoPage() {
 
           .table-wrap {
             width: 100%;
-            overflow-x: hidden;
+            overflow-x: auto;
             border: 1px solid #d8e6f3;
             border-radius: 14px;
             background: #ffffff;
+            -webkit-overflow-scrolling: touch;
           }
 
           .po-table {
@@ -967,10 +970,6 @@ export default function CustomerPoPage() {
           }
 
           @media (max-width: 1300px) {
-            .table-wrap {
-              overflow-x: auto;
-            }
-
             .po-table {
               min-width: 1180px;
             }
@@ -987,6 +986,310 @@ export default function CustomerPoPage() {
 
             .form-actions {
               justify-content: flex-start;
+            }
+          }
+
+          @media (max-width: 820px) {
+            .customer-po-page {
+              padding: 16px 14px 28px;
+              overflow-x: hidden;
+            }
+
+            .page-header {
+              flex-direction: column;
+              gap: 12px;
+              margin-bottom: 16px;
+            }
+
+            .breadcrumb {
+              font-size: 12px;
+              line-height: 1.25;
+            }
+
+            .page-title {
+              font-size: 36px;
+              letter-spacing: -0.025em;
+            }
+
+            .page-subtitle {
+              font-size: 15px;
+              line-height: 1.35;
+              margin-top: 8px;
+            }
+
+            .refresh-button {
+              width: 100%;
+              min-height: 48px;
+              border-radius: 14px;
+            }
+
+            .summary-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 12px;
+              margin-bottom: 16px;
+            }
+
+            .summary-card {
+              padding: 16px;
+              border-radius: 16px;
+            }
+
+            .summary-label {
+              font-size: 11px;
+              line-height: 1.25;
+            }
+
+            .summary-value {
+              font-size: 28px;
+            }
+
+            .summary-note {
+              font-size: 12px;
+            }
+
+            .summary-card:nth-child(3) {
+              grid-column: span 2;
+            }
+
+            .content-card {
+              padding: 16px;
+              border-radius: 18px;
+            }
+
+            .card-header {
+              flex-direction: column;
+              align-items: stretch;
+              gap: 12px;
+            }
+
+            .card-title {
+              font-size: 24px;
+              line-height: 1.15;
+            }
+
+            .card-subtitle {
+              font-size: 13px;
+              line-height: 1.35;
+            }
+
+            .search-input {
+              width: 100%;
+              min-height: 48px;
+              font-size: 15px;
+            }
+
+            .table-wrap {
+              border: 0;
+              border-radius: 0;
+              overflow: visible;
+              background: transparent;
+            }
+
+            .po-table {
+              display: block;
+              min-width: 0;
+              width: 100%;
+              background: transparent;
+            }
+
+            .po-table thead {
+              display: none;
+            }
+
+            .po-table tbody {
+              display: flex;
+              flex-direction: column;
+              gap: 14px;
+            }
+
+            .po-table tr {
+              display: block;
+              width: 100%;
+              border: 1px solid #d4e4f5;
+              border-radius: 18px;
+              background: #f8fbff;
+              overflow: hidden;
+              box-shadow: 0 8px 18px rgba(0, 43, 91, 0.05);
+            }
+
+            .po-table td {
+              display: grid;
+              grid-template-columns: 112px minmax(0, 1fr);
+              gap: 10px;
+              align-items: start;
+              width: 100%;
+              box-sizing: border-box;
+              padding: 12px 12px;
+              border-bottom: 1px solid #e3edf7;
+              font-size: 14px;
+              line-height: 1.35;
+              word-break: break-word;
+            }
+
+            .po-table td::before {
+              content: attr(data-label);
+              color: #5b7189;
+              font-size: 11px;
+              line-height: 1.25;
+              font-weight: 900;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+            }
+
+            .po-table td:last-child {
+              border-bottom: 0;
+            }
+
+            .col-no,
+            .col-qty,
+            .col-status,
+            .col-action {
+              text-align: left;
+            }
+
+            .quotation-number {
+              font-size: 14px;
+              line-height: 1.35;
+            }
+
+            .description-text {
+              display: block;
+              -webkit-line-clamp: unset;
+              max-height: 92px;
+              overflow: auto;
+              padding-right: 4px;
+              line-height: 1.4;
+            }
+
+            .badge {
+              width: fit-content;
+              min-width: 88px;
+              min-height: 28px;
+            }
+
+            .file-link-button {
+              font-size: 14px;
+            }
+
+            .file-note {
+              font-size: 12px;
+            }
+
+            .action-button {
+              width: 100%;
+              min-height: 44px;
+              font-size: 14px;
+              border-radius: 12px;
+            }
+
+            .po-form-row {
+              margin-top: -8px;
+              border-color: #bcd6ef !important;
+              background: #eef6ff !important;
+            }
+
+            .po-form-row td {
+              display: block;
+              padding: 0;
+              border-bottom: 0;
+            }
+
+            .po-form-row td::before {
+              display: none;
+            }
+
+            .po-form {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: 14px;
+              padding: 16px;
+              border-top: 0;
+              background: #eef6ff;
+            }
+
+            .field label {
+              font-size: 12px;
+            }
+
+            .field input {
+              min-height: 48px;
+              font-size: 15px;
+              border-radius: 13px;
+            }
+
+            .form-actions {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+              width: 100%;
+            }
+
+            .save-button,
+            .cancel-button {
+              width: 100%;
+              min-height: 46px;
+              padding: 12px;
+              border-radius: 13px;
+            }
+
+            .empty-state {
+              padding: 22px 14px;
+            }
+
+            .po-table tr:has(.empty-state) {
+              display: block;
+              background: #ffffff;
+            }
+
+            .po-table tr:has(.empty-state) td {
+              display: block;
+              border-bottom: 0;
+            }
+
+            .po-table tr:has(.empty-state) td::before {
+              display: none;
+            }
+          }
+
+          @media (max-width: 430px) {
+            .customer-po-page {
+              padding: 14px 12px 26px;
+            }
+
+            .page-title {
+              font-size: 34px;
+            }
+
+            .summary-grid {
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+            }
+
+            .summary-card {
+              padding: 14px;
+            }
+
+            .summary-value {
+              font-size: 26px;
+            }
+
+            .content-card {
+              padding: 14px;
+            }
+
+            .po-table td {
+              grid-template-columns: 98px minmax(0, 1fr);
+              gap: 8px;
+              padding: 11px 10px;
+              font-size: 13.5px;
+            }
+
+            .po-table td::before {
+              font-size: 10.5px;
+            }
+
+            .form-actions {
+              grid-template-columns: 1fr;
             }
           }
         `}</style>
@@ -1080,40 +1383,48 @@ export default function CustomerPoPage() {
                   filteredRows.map((row, index) => (
                     <React.Fragment key={row.id}>
                       <tr>
-                        <td className="col-no">{index + 1}</td>
+                        <td className="col-no" data-label="No.">
+                          {index + 1}
+                        </td>
 
-                        <td className="col-quote">
+                        <td className="col-quote" data-label="Quotation No">
                           <span className="quotation-number">{row.quotationNumber}</span>
                         </td>
 
-                        <td className="col-date">{row.quoteDate}</td>
+                        <td className="col-date" data-label="Date">
+                          {row.quoteDate}
+                        </td>
 
-                        <td className="col-customer">{row.customerName}</td>
+                        <td className="col-customer" data-label="Customer">
+                          {row.customerName}
+                        </td>
 
-                        <td className="col-attention">{row.attention}</td>
+                        <td className="col-attention" data-label="Attention">
+                          {row.attention}
+                        </td>
 
-                        <td className="col-desc">
+                        <td className="col-desc" data-label="Description Item">
                           <div className="description-text">{row.descriptionItem}</div>
                         </td>
 
-                        <td className="col-qty">{row.qty || '-'}</td>
+                        <td className="col-qty" data-label="Qty">
+                          {row.qty || '-'}
+                        </td>
 
-                        <td className="col-status">
+                        <td className="col-status" data-label="PO Status">
                           <span className={row.poStatus === 'Sudah Ada' ? 'badge badge-ready' : 'badge badge-empty'}>
                             {row.poStatus}
                           </span>
                         </td>
 
-                        <td className="col-po">{row.poNumber}</td>
+                        <td className="col-po" data-label="PO Number">
+                          {row.poNumber}
+                        </td>
 
-                        <td className="col-file">
+                        <td className="col-file" data-label="File PO">
                           {row.storagePath ? (
                             <div>
-                              <button
-                                type="button"
-                                className="file-link-button"
-                                onClick={() => openFile(row.storagePath)}
-                              >
+                              <button type="button" className="file-link-button" onClick={() => openFile(row.storagePath)}>
                                 Lihat File PO
                               </button>
 
@@ -1126,7 +1437,7 @@ export default function CustomerPoPage() {
                           )}
                         </td>
 
-                        <td className="col-action">
+                        <td className="col-action" data-label="Action">
                           <button className="action-button" type="button" onClick={() => openPoForm(row)}>
                             {row.poStatus === 'Sudah Ada' ? 'Update PO' : 'Insert PO'}
                           </button>
@@ -1134,7 +1445,7 @@ export default function CustomerPoPage() {
                       </tr>
 
                       {activeQuotationId === row.id ? (
-                        <tr className="po-form-row">
+                        <tr className="po-form-row" id={`po-form-${row.id}`}>
                           <td colSpan={11}>
                             <div className="po-form">
                               <div className="field">
@@ -1148,11 +1459,7 @@ export default function CustomerPoPage() {
 
                               <div className="field">
                                 <label>PO Date</label>
-                                <input
-                                  type="date"
-                                  value={poDate}
-                                  onChange={(event) => setPoDate(event.target.value)}
-                                />
+                                <input type="date" value={poDate} onChange={(event) => setPoDate(event.target.value)} />
                               </div>
 
                               <div className="field">
@@ -1165,12 +1472,7 @@ export default function CustomerPoPage() {
                               </div>
 
                               <div className="form-actions">
-                                <button
-                                  className="save-button"
-                                  type="button"
-                                  onClick={() => savePO(row)}
-                                  disabled={saving}
-                                >
+                                <button className="save-button" type="button" onClick={() => savePO(row)} disabled={saving}>
                                   {saving ? 'Saving...' : row.poStatus === 'Sudah Ada' ? 'Update PO' : 'Save PO'}
                                 </button>
 

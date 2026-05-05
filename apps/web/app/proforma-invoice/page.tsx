@@ -518,6 +518,11 @@ export default function ProformaInvoicePage() {
     setPaymentNote('');
     setStatus(DEFAULT_STATUS);
     setPrintData(null);
+
+    setTimeout(() => {
+      const form = document.getElementById('create-proforma-form');
+      form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 
   function buildPrintData(row: ProformaSourceRow): ProformaInvoicePrintData {
@@ -560,7 +565,7 @@ export default function ProformaInvoicePage() {
   }
 
   return (
-    <AppShell>
+    <AppShell activeMenu="Proforma Invoice">
       <main className="pi-page-ui">
         <style>{`
           .pi-page-ui {
@@ -724,6 +729,7 @@ export default function ProformaInvoicePage() {
             overflow-x: auto;
             border: 1px solid #d4e5f6;
             border-radius: 14px;
+            -webkit-overflow-scrolling: touch;
           }
 
           .pi-table {
@@ -927,6 +933,328 @@ export default function ProformaInvoicePage() {
               max-width: none;
             }
           }
+
+          @media (max-width: 820px) {
+            .pi-page-ui {
+              padding: 16px 14px 28px;
+              overflow-x: hidden;
+            }
+
+            .page-header {
+              flex-direction: column;
+              gap: 12px;
+              margin-bottom: 16px;
+            }
+
+            .breadcrumb {
+              font-size: 12px;
+              line-height: 1.3;
+            }
+
+            .page-title {
+              font-size: 36px;
+              line-height: 1.05;
+              letter-spacing: -0.025em;
+            }
+
+            .page-subtitle {
+              margin-top: 8px;
+              font-size: 15px;
+              line-height: 1.38;
+            }
+
+            .refresh-button {
+              width: 100%;
+              min-height: 48px;
+              border-radius: 14px;
+              font-size: 15px;
+            }
+
+            .summary-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 12px;
+              margin-bottom: 16px;
+            }
+
+            .summary-card {
+              padding: 16px;
+              border-radius: 16px;
+            }
+
+            .summary-card:nth-child(2) {
+              grid-column: span 2;
+            }
+
+            .summary-label {
+              font-size: 11px;
+              line-height: 1.25;
+            }
+
+            .summary-value {
+              font-size: 26px;
+              line-height: 1.08;
+              word-break: break-word;
+            }
+
+            .summary-card:nth-child(2) .summary-value {
+              font-size: 25px;
+            }
+
+            .summary-note {
+              font-size: 12px;
+              line-height: 1.35;
+            }
+
+            .content-card {
+              padding: 16px;
+              border-radius: 18px;
+              margin-bottom: 16px;
+            }
+
+            .card-header {
+              flex-direction: column;
+              align-items: stretch;
+              gap: 12px;
+            }
+
+            .card-title {
+              font-size: 24px;
+              line-height: 1.15;
+            }
+
+            .card-subtitle {
+              font-size: 13px;
+              line-height: 1.35;
+            }
+
+            .search-input,
+            .form-input,
+            .form-textarea {
+              min-height: 48px;
+              font-size: 15px;
+              border-radius: 13px;
+            }
+
+            .primary-button {
+              width: 100%;
+              min-height: 48px;
+              font-size: 15px;
+              border-radius: 14px;
+            }
+
+            .table-wrap {
+              border: 0;
+              border-radius: 0;
+              overflow: visible;
+              background: transparent;
+            }
+
+            .pi-table {
+              display: block;
+              width: 100%;
+              min-width: 0;
+              background: transparent;
+            }
+
+            .pi-table thead {
+              display: none;
+            }
+
+            .pi-table tbody {
+              display: flex;
+              flex-direction: column;
+              gap: 14px;
+            }
+
+            .pi-table tr {
+              display: block;
+              width: 100%;
+              border: 1px solid #d4e5f6;
+              border-radius: 18px;
+              background: #f8fbff;
+              overflow: hidden;
+              box-shadow: 0 8px 18px rgba(0, 43, 91, 0.05);
+            }
+
+            .pi-table td {
+              display: grid;
+              grid-template-columns: 116px minmax(0, 1fr);
+              gap: 10px;
+              align-items: start;
+              width: 100%;
+              box-sizing: border-box;
+              padding: 12px 12px;
+              border-bottom: 1px solid #e3edf7;
+              font-size: 14px;
+              line-height: 1.35;
+              word-break: break-word;
+              text-align: left !important;
+            }
+
+            .pi-table td::before {
+              content: attr(data-label);
+              color: #5b7189;
+              font-size: 11px;
+              line-height: 1.25;
+              font-weight: 900;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+            }
+
+            .pi-table td:last-child {
+              border-bottom: 0;
+            }
+
+            .selected-row {
+              border-color: #8fc5f5 !important;
+              box-shadow: 0 8px 22px rgba(11, 123, 211, 0.12) !important;
+            }
+
+            .selected-row td {
+              background: #f3f9ff;
+            }
+
+            .col-no,
+            .col-total,
+            .col-action {
+              text-align: left !important;
+            }
+
+            .col-quote {
+              font-size: 14px;
+              line-height: 1.35;
+              font-weight: 900;
+            }
+
+            .col-total {
+              font-weight: 900;
+            }
+
+            .badge {
+              width: fit-content;
+              min-width: 88px;
+              min-height: 28px;
+              font-size: 12px;
+            }
+
+            .action-button {
+              width: 100%;
+              min-height: 44px;
+              border-radius: 12px;
+              font-size: 14px;
+            }
+
+            .form-grid,
+            .detail-grid {
+              grid-template-columns: 1fr;
+              gap: 14px;
+            }
+
+            .preview-box {
+              padding: 16px;
+              border-radius: 18px;
+            }
+
+            .preview-title {
+              font-size: 20px;
+              line-height: 1.18;
+            }
+
+            .preview-line {
+              font-size: 14px;
+              line-height: 1.45;
+            }
+
+            .money-row {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: 4px;
+              margin-bottom: 12px;
+              font-size: 14px;
+            }
+
+            .money-row strong {
+              font-size: 15px;
+              white-space: normal;
+              word-break: break-word;
+            }
+
+            .money-row.grand {
+              font-size: 16px;
+            }
+
+            .field label {
+              font-size: 12px;
+            }
+
+            .form-textarea {
+              min-height: 110px;
+            }
+
+            .empty-state {
+              padding: 22px 14px;
+            }
+
+            .pi-table tr:has(.empty-state) {
+              display: block;
+              background: #ffffff;
+            }
+
+            .pi-table tr:has(.empty-state) td {
+              display: block;
+              border-bottom: 0;
+            }
+
+            .pi-table tr:has(.empty-state) td::before {
+              display: none;
+            }
+          }
+
+          @media (max-width: 430px) {
+            .pi-page-ui {
+              padding: 14px 12px 26px;
+            }
+
+            .page-title {
+              font-size: 34px;
+            }
+
+            .summary-grid {
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+            }
+
+            .summary-card {
+              padding: 14px;
+            }
+
+            .summary-value {
+              font-size: 24px;
+            }
+
+            .summary-card:nth-child(2) .summary-value {
+              font-size: 22px;
+            }
+
+            .content-card {
+              padding: 14px;
+            }
+
+            .pi-table td {
+              grid-template-columns: 104px minmax(0, 1fr);
+              gap: 8px;
+              padding: 11px 10px;
+              font-size: 13.5px;
+            }
+
+            .pi-table td::before {
+              font-size: 10.5px;
+            }
+
+            .card-title {
+              font-size: 23px;
+            }
+          }
         `}</style>
 
         <div className="page-header">
@@ -1021,17 +1349,31 @@ export default function ProformaInvoicePage() {
                       key={row.quotationId}
                       className={selectedId === row.quotationId ? 'selected-row' : ''}
                     >
-                      <td className="col-no">{index + 1}</td>
-                      <td className="col-quote">{row.quotationNumber}</td>
-                      <td className="col-date">{row.quotationDate}</td>
-                      <td className="col-customer">{row.companyName}</td>
-                      <td className="col-attention">{row.attentionName}</td>
-                      <td className="col-po">{row.poNumber}</td>
-                      <td>
+                      <td className="col-no" data-label="No.">
+                        {index + 1}
+                      </td>
+                      <td className="col-quote" data-label="Quotation No">
+                        {row.quotationNumber}
+                      </td>
+                      <td className="col-date" data-label="Date">
+                        {row.quotationDate}
+                      </td>
+                      <td className="col-customer" data-label="Customer">
+                        {row.companyName}
+                      </td>
+                      <td className="col-attention" data-label="Attention">
+                        {row.attentionName}
+                      </td>
+                      <td className="col-po" data-label="PO Number">
+                        {row.poNumber}
+                      </td>
+                      <td data-label="PO Status">
                         <span className="badge">Sudah Ada</span>
                       </td>
-                      <td className="col-total">Rp {formatMoney(row.grandTotal)}</td>
-                      <td className="col-action">
+                      <td className="col-total" data-label="Grand Total">
+                        Rp {formatMoney(row.grandTotal)}
+                      </td>
+                      <td className="col-action" data-label="Action">
                         <button
                           className="action-button"
                           type="button"
@@ -1048,7 +1390,7 @@ export default function ProformaInvoicePage() {
           </div>
         </section>
 
-        <section className="content-card">
+        <section className="content-card" id="create-proforma-form">
           <div className="card-header">
             <div>
               <h2 className="card-title">Create Proforma Invoice</h2>

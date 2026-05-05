@@ -317,7 +317,7 @@ export default function DashboardPage() {
     <AppShell activeMenu="Dashboard">
       <main className="dashboard-page">
         <header className="dashboard-header">
-          <div>
+          <div className="dashboard-title-wrap">
             <div className="page-kicker">SALES-APP / Dashboard</div>
             <h1>Dashboard</h1>
             <p>Ringkasan data quotation, customer, PO, dan proforma invoice.</p>
@@ -519,9 +519,9 @@ export default function DashboardPage() {
               <tbody>
                 {metrics.recentQuotations.length === 0 ? (
                   <tr>
-                    <td>Belum ada data</td>
-                    <td>-</td>
-                    <td>
+                    <td data-label="Customer">Belum ada data</td>
+                    <td data-label="Date">-</td>
+                    <td data-label="Status">
                       <span className="status-pill pending">Pending</span>
                     </td>
                   </tr>
@@ -531,9 +531,9 @@ export default function DashboardPage() {
 
                     return (
                       <tr key={`${item.customer}-${index}`}>
-                        <td>{item.customer}</td>
-                        <td>{item.date}</td>
-                        <td>
+                        <td data-label="Customer">{item.customer}</td>
+                        <td data-label="Date">{item.date}</td>
+                        <td data-label="Status">
                           <span
                             className="status-pill"
                             style={{
@@ -571,6 +571,10 @@ export default function DashboardPage() {
             gap: 16px;
             margin-bottom: 18px;
             background: #dfe8f2;
+          }
+
+          .dashboard-title-wrap {
+            min-width: 0;
           }
 
           .page-kicker {
@@ -619,6 +623,7 @@ export default function DashboardPage() {
             padding: 0 14px;
             cursor: pointer;
             font-family: Arial, sans-serif;
+            white-space: nowrap;
           }
 
           .info-banner {
@@ -954,6 +959,301 @@ export default function DashboardPage() {
             .content-grid-top,
             .content-grid-bottom {
               grid-template-columns: 1fr;
+            }
+          }
+
+          @media (max-width: 820px) {
+            .dashboard-page {
+              padding-bottom: 24px;
+            }
+
+            .dashboard-header {
+              flex-direction: column;
+              align-items: stretch;
+              gap: 12px;
+              margin-bottom: 14px;
+            }
+
+            .page-kicker {
+              font-size: 12px;
+              margin-bottom: 6px;
+            }
+
+            .dashboard-header h1 {
+              font-size: 34px;
+            }
+
+            .dashboard-header p {
+              max-width: 100%;
+              font-size: 15px;
+              line-height: 1.28;
+            }
+
+            .top-actions {
+              width: 100%;
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 10px;
+            }
+
+            .top-select,
+            .mini-button {
+              width: 100%;
+              height: 42px;
+              padding: 0 12px;
+              font-size: 13px;
+              border-radius: 13px;
+            }
+
+            .stats-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 12px;
+              margin-bottom: 12px;
+            }
+
+            .stat-card {
+              min-height: 152px;
+              padding: 18px;
+            }
+
+            .stat-card span {
+              font-size: 14px;
+              line-height: 1.18;
+              margin-bottom: 12px;
+            }
+
+            .stat-card strong {
+              font-size: 28px;
+              margin-bottom: 12px;
+            }
+
+            .stat-card small {
+              display: block;
+              font-size: 13px;
+              line-height: 1.35;
+            }
+
+            .content-grid-top,
+            .content-grid-bottom {
+              grid-template-columns: 1fr;
+              gap: 12px;
+              margin-bottom: 12px;
+            }
+
+            .panel {
+              padding: 16px;
+              border-radius: 14px;
+            }
+
+            .panel-header {
+              align-items: flex-start;
+              gap: 10px;
+            }
+
+            .panel h2 {
+              font-size: 17px;
+              line-height: 1.2;
+            }
+
+            .panel-big-number {
+              font-size: 24px;
+              margin-top: 10px;
+            }
+
+            .line-chart-wrapper {
+              height: 232px;
+              padding-left: 30px;
+              padding-top: 4px;
+            }
+
+            .chart-axis-left {
+              height: 154px;
+              top: 10px;
+              font-size: 11px;
+            }
+
+            .line-chart {
+              height: 162px;
+              background:
+                linear-gradient(#dfe8f2 1px, transparent 1px) 0 0 / 100% 38px;
+            }
+
+            .chart-months {
+              font-size: 11px;
+              padding-top: 8px;
+            }
+
+            .tooltip-card {
+              display: none;
+            }
+
+            .donut {
+              width: 132px;
+              height: 132px;
+            }
+
+            .donut-inner {
+              width: 82px;
+              height: 82px;
+            }
+
+            .donut-inner strong {
+              font-size: 22px;
+            }
+
+            .bar-list {
+              margin-top: 18px;
+              gap: 14px;
+            }
+
+            .bar-row,
+            .empty-bar-row {
+              grid-template-columns: 96px minmax(0, 1fr) 34px;
+              gap: 10px;
+              font-size: 12px;
+            }
+
+            .bar-row span,
+            .empty-bar-row span {
+              line-height: 1.15;
+              word-break: break-word;
+            }
+
+            .bar-track,
+            .empty-bar-row div {
+              height: 18px;
+            }
+
+            .recent-table {
+              display: block;
+              margin-top: 14px;
+              font-size: 13px;
+            }
+
+            .recent-table thead {
+              display: none;
+            }
+
+            .recent-table tbody {
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+            }
+
+            .recent-table tr {
+              display: block;
+              border: 1px solid #d8e4ef;
+              border-radius: 12px;
+              background: #f8fbff;
+              padding: 10px;
+            }
+
+            .recent-table td {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+              border-top: 0;
+              padding: 7px 4px;
+              white-space: normal;
+              overflow: visible;
+              text-overflow: unset;
+              line-height: 1.25;
+            }
+
+            .recent-table td::before {
+              content: attr(data-label);
+              flex-shrink: 0;
+              color: #5d7186;
+              font-size: 12px;
+              font-weight: 700;
+            }
+
+            .status-pill {
+              padding: 6px 10px;
+              font-size: 12px;
+            }
+          }
+
+          @media (max-width: 520px) {
+            .dashboard-header h1 {
+              font-size: 32px;
+            }
+
+            .dashboard-header p {
+              font-size: 15px;
+            }
+
+            .stats-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 10px;
+            }
+
+            .stat-card {
+              min-height: 148px;
+              padding: 16px 14px;
+            }
+
+            .stat-card span {
+              font-size: 13px;
+            }
+
+            .stat-card strong {
+              font-size: 27px;
+            }
+
+            .stat-card small {
+              font-size: 12px;
+            }
+
+            .panel {
+              padding: 14px;
+            }
+
+            .panel-header {
+              flex-direction: column;
+            }
+
+            .panel-header .mini-button {
+              max-width: 180px;
+            }
+
+            .line-chart-wrapper {
+              height: 218px;
+              padding-left: 28px;
+            }
+
+            .line-chart {
+              height: 154px;
+            }
+
+            .chart-months {
+              font-size: 10.5px;
+            }
+
+            .status-row {
+              font-size: 13px;
+            }
+
+            .bar-row,
+            .empty-bar-row {
+              grid-template-columns: 92px minmax(0, 1fr) 28px;
+              gap: 8px;
+              font-size: 12px;
+            }
+          }
+
+          @media (max-width: 380px) {
+            .top-actions {
+              grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+              grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+              min-height: 120px;
             }
           }
         `}</style>
