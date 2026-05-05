@@ -1,7 +1,7 @@
-// src/app/quotations/printlayout.tsx
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 type QuoteItem = {
   id: string;
@@ -47,7 +47,15 @@ function normalizeAssetPath(src: string) {
 function cleanHtml(value: string) {
   return (value || '')
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '');
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+    .trim();
+}
+
+function cleanText(value: unknown) {
+  return String(value ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function safePrintTitle(quoteNo: string) {
@@ -57,6 +65,23 @@ function safePrintTitle(quoteNo: string) {
     .trim();
 
   return cleanQuote || 'Quotation';
+}
+
+function splitHtmlFromKeyword(html: string, keyword: string) {
+  const source = html || '';
+  const index = source.toLowerCase().indexOf(keyword.toLowerCase());
+
+  if (index < 0) {
+    return {
+      beforeHtml: source,
+      afterHtml: '',
+    };
+  }
+
+  return {
+    beforeHtml: source.slice(0, index).trim(),
+    afterHtml: source.slice(index).trim(),
+  };
 }
 
 export default function PrintLayout(props: PrintLayoutProps) {
@@ -99,24 +124,48 @@ export default function PrintLayout(props: PrintLayoutProps) {
   const computedSubtotal =
     subtotal && subtotal > 0
       ? subtotal
-      : validItems.reduce((acc, item) => acc + item.qty * item.price, 0);
+      : validItems.reduce((acc, item) => acc + Number(item.qty || 0) * Number(item.price || 0), 0);
 
   const computedTaxValue =
     typeof taxValue === 'number'
       ? taxValue
-      : (computedSubtotal - discountValue) * (taxPercent / 100);
+      : (computedSubtotal - Number(discountValue || 0)) * (Number(taxPercent || 0) / 100);
 
   const computedGrandTotal =
     grandTotal && grandTotal > 0
       ? grandTotal
-      : computedSubtotal - discountValue + computedTaxValue;
+      : computedSubtotal - Number(discountValue || 0) + computedTaxValue;
+
+  const preparedItems = validItems.map((item) => {
+    return {
+      item,
+      detailSpec: cleanHtml(getDetailSpec(item)),
+    };
+  });
 
   React.useEffect(() => {
     if (typeof document === 'undefined') return;
     document.title = safePrintTitle(quoteNo);
   }, [quoteNo]);
 
-  return (
+  const renderHeader = () => {
+    return (
+      <div className="ps-repeat-header">
+        <div className="ps-header-row">
+          <div className="ps-header-left">
+            <img src={quotationHeaderSrc} alt="QUOTATION" className="ps-quotation-title" />
+          </div>
+
+          <div className="ps-header-right">
+            <img src={safeLogoSrc} alt="Logo Company" className="ps-logo" />
+            <img src={safeAddressImageSrc} alt="Address" className="ps-address-image" />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const content = (
     <section className="quotation-print-root">
       <style>{`
         @media screen {
@@ -133,32 +182,64 @@ export default function PrintLayout(props: PrintLayoutProps) {
 
           html,
           body {
+            width: auto !important;
+            height: auto !important;
+            min-height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
+            overflow: visible !important;
             background: #ffffff !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
-          body * {
-            visibility: hidden !important;
-          }
-
-          .quotation-print-root,
-          .quotation-print-root * {
-            visibility: visible !important;
+          body > :not(.quotation-print-root) {
+            display: none !important;
           }
 
           .quotation-print-root {
             display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+            right: auto !important;
+            bottom: auto !important;
             width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
             background: #ffffff !important;
             color: #000000 !important;
             font-family: Arial, Helvetica, sans-serif !important;
             box-sizing: border-box !important;
+          }
+
+          .quotation-print-root,
+          .quotation-print-root * {
+            line-height: 1.25;
+          }
+
+          .ps-force-page-break {
+            display: block !important;
+            height: 1px !important;
+            line-height: 0 !important;
+            overflow: hidden !important;
+            page-break-before: always !important;
+            break-before: page !important;
+          }
+
+          .ps-force-page-break {
+            display: none !important;
+          }
+
+          .ps-repeat-header {
+            width: 100%;
+            height: 34mm;
+            box-sizing: border-box;
+            padding: 0 1mm 3mm 1mm;
+            background: #ffffff;
+            overflow: visible;
           }
 
           .ps-print-shell {
@@ -182,19 +263,11 @@ export default function PrintLayout(props: PrintLayoutProps) {
             vertical-align: top;
           }
 
-          .ps-repeat-header {
-            width: 100%;
-            height: 38mm;
-            box-sizing: border-box;
-            padding: 0 1mm 4mm 1mm;
-            background: #ffffff;
-          }
-
           .ps-header-row {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 8mm;
+            gap: 7mm;
             width: 100%;
           }
 
@@ -205,11 +278,21 @@ export default function PrintLayout(props: PrintLayoutProps) {
 
           .ps-quotation-title {
             width: auto;
-            height: 9mm;
+            height: 8.5mm;
             display: block;
             object-fit: contain;
             object-position: left top;
-            margin-top: 2mm;
+            margin-top: 1mm;
+          }
+
+          .ps-header-center {
+            flex: 0 0 45mm;
+            text-align: center;
+            font-size: 9.6px;
+            line-height: 1.15;
+            font-weight: 700;
+            padding-top: 1mm;
+            white-space: nowrap;
           }
 
           .ps-header-right {
@@ -222,23 +305,23 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-logo {
-            width: 72mm;
-            height: 24mm;
+            width: 70mm;
+            height: 21mm;
             display: block;
             object-fit: contain;
             object-position: right center;
-            margin-top: -4mm;
+            margin-top: -3mm;
             padding-bottom: 1mm;
             box-sizing: border-box;
           }
 
           .ps-address-image {
-            width: 72mm;
-            height: 15mm;
+            width: 67mm;
+            height: 12mm;
             display: block;
             object-fit: contain;
             object-position: right top;
-            margin-top: -4.5mm;
+            margin-top: -4.2mm;
           }
 
           .ps-content {
@@ -251,8 +334,8 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-meta {
-            margin-bottom: 4mm;
-            font-size: 10.5px;
+            margin-bottom: 3mm;
+            font-size: 10.3px;
             line-height: 1.25;
           }
 
@@ -267,13 +350,13 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-customer {
-            font-size: 10.5px;
-            line-height: 1.28;
-            margin-bottom: 3mm;
+            font-size: 10.3px;
+            line-height: 1.25;
+            margin-bottom: 2.4mm;
           }
 
           .ps-priority {
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
           }
 
           .ps-address-text {
@@ -281,65 +364,104 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-intro {
-            margin-top: 2.8mm;
-            margin-bottom: 3mm;
-            font-size: 10.5px;
-            line-height: 1.28;
+            margin-top: 2.2mm;
+            margin-bottom: 2.4mm;
+            font-size: 10.1px;
+            line-height: 1.25;
           }
 
-          .ps-table {
+          .ps-table,
+          .ps-continuation-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 10.2px;
-            line-height: 1.23;
+            font-size: 10.1px;
+            line-height: 1.22;
           }
 
-          .ps-table thead {
-            display: table-header-group;
+          .ps-table th,
+          .ps-table td,
+          .ps-continuation-table th,
+          .ps-continuation-table td {
+            max-width: 100% !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
           }
 
-          .ps-table thead th {
+          .ps-header-row,
+          .ps-content,
+          .ps-detail-wrap,
+          .ps-continuation-detail,
+          .ps-spec,
+          .ps-spec-content,
+          .ps-spec-content *,
+          .ps-terms-text,
+          .ps-inwords-value {
+            max-width: 100% !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+          }
+
+          img {
+            max-width: 100% !important;
+          }
+
+          .ps-item-group {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+
+          .ps-table thead th,
+          .ps-continuation-table thead th {
             text-align: left;
             font-weight: 700;
-            font-size: 10px;
-            padding: 1.2mm 0;
+            font-size: 9.6px;
+            padding: 1.05mm 0;
+            border-top: 1px solid #000000;
             border-bottom: 1px solid #000000;
           }
 
-          .ps-table th.no {
+          .ps-table th.no,
+          .ps-continuation-table th.no {
             width: 8mm;
           }
 
-          .ps-table th.desc {
+          .ps-table th.desc,
+          .ps-continuation-table th.desc {
             width: auto;
           }
 
-          .ps-table th.qty {
+          .ps-table th.qty,
+          .ps-continuation-table th.qty {
             width: 15mm;
             text-align: right;
           }
 
-          .ps-table th.price {
+          .ps-table th.price,
+          .ps-continuation-table th.price {
             width: 29mm;
             text-align: right;
           }
 
-          .ps-table th.total {
+          .ps-table th.total,
+          .ps-continuation-table th.total {
             width: 31mm;
             text-align: right;
           }
 
-          .ps-table td {
+          .ps-table td,
+          .ps-continuation-table td {
             vertical-align: top;
-            padding: 0.8mm 0;
+            padding: 0.55mm 0;
           }
 
-          .ps-table td.no {
+          .ps-table td.no,
+          .ps-continuation-table td.no {
             padding-right: 2mm;
           }
 
-          .ps-table td.desc {
+          .ps-table td.desc,
+          .ps-continuation-table td.desc {
             padding-right: 3mm;
           }
 
@@ -357,13 +479,18 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-row-main {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: auto;
+            break-inside: auto;
           }
 
           .ps-detail-row td {
-            padding-top: 0.2mm;
-            padding-bottom: 0.6mm;
+            padding-top: 0.1mm;
+            padding-bottom: 0.4mm;
+          }
+
+          .ps-detail-row {
+            page-break-inside: auto;
+            break-inside: auto;
           }
 
           .ps-detail-wrap {
@@ -371,16 +498,21 @@ export default function PrintLayout(props: PrintLayoutProps) {
             padding-right: 70mm;
           }
 
+          .ps-continuation-detail {
+            padding-left: 10mm;
+            padding-right: 70mm;
+          }
+
           .ps-spec {
-            margin-top: 0.3mm;
-            font-size: 10px;
+            margin-top: 0.2mm;
+            font-size: 9.4px;
             line-height: 1.22;
             word-break: normal;
             overflow-wrap: break-word;
           }
 
           .ps-spec-content {
-            margin-top: 0.4mm;
+            margin-top: 0.3mm;
             white-space: pre-line;
           }
 
@@ -390,29 +522,29 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-spec-content br {
-            line-height: 1.2;
+            line-height: 1.22;
           }
 
           .ps-spec-content ul {
             list-style: disc;
             padding-left: 4mm;
-            margin: 0.8mm 0;
+            margin: 0.5mm 0;
           }
 
           .ps-spec-content ol {
             list-style: decimal;
             padding-left: 4mm;
-            margin: 0.8mm 0;
+            margin: 0.5mm 0;
           }
 
           .ps-spec-content li {
-            margin: 0.25mm 0;
+            margin: 0.12mm 0;
           }
 
           .ps-status {
-            margin-top: 0.8mm;
-            font-size: 10px;
-            line-height: 1.2;
+            margin-top: 0.5mm;
+            font-size: 9.4px;
+            line-height: 1.22;
             color: #000000;
           }
 
@@ -439,9 +571,9 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-bottom-block {
-            margin-top: 18mm;
-            page-break-inside: avoid;
-            break-inside: avoid;
+            margin-top: 7mm;
+            page-break-inside: auto;
+            break-inside: auto;
           }
 
           .ps-bottom {
@@ -450,7 +582,7 @@ export default function PrintLayout(props: PrintLayoutProps) {
             align-items: flex-start;
             gap: 10mm;
             font-size: 10.3px;
-            line-height: 1.32;
+            line-height: 1.28;
           }
 
           .ps-terms {
@@ -462,14 +594,14 @@ export default function PrintLayout(props: PrintLayoutProps) {
             flex: 0 0 36%;
             min-width: 0;
             font-size: 10.3px;
-            line-height: 1.32;
+            line-height: 1.28;
             font-variant-numeric: tabular-nums;
             font-feature-settings: "tnum" 1;
           }
 
           .ps-terms-title {
             font-weight: 700;
-            margin-bottom: 1.2mm;
+            margin-bottom: 1mm;
           }
 
           .ps-terms-text {
@@ -482,8 +614,8 @@ export default function PrintLayout(props: PrintLayoutProps) {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 8mm;
-            margin-top: 1.3mm;
+            gap: 6mm;
+            margin-top: 1mm;
           }
 
           .ps-summary-row span:first-child {
@@ -493,28 +625,28 @@ export default function PrintLayout(props: PrintLayoutProps) {
           }
 
           .ps-summary-row span:last-child {
-            min-width: 35mm;
+            min-width: 34mm;
             text-align: right;
             font-weight: 700;
           }
 
           .ps-grand {
-            margin-top: 3mm;
+            margin-top: 2.4mm;
           }
 
           .ps-grand span:first-child,
           .ps-grand span:last-child {
             font-weight: 800;
-            font-size: 10.6px;
+            font-size: 10.8px;
           }
 
           .ps-inwords {
-            margin-top: 2.5mm;
+            margin-top: 2.2mm;
             text-align: left;
           }
 
           .ps-inwords-label {
-            margin-bottom: 0.7mm;
+            margin-bottom: 0.6mm;
             font-weight: 700;
           }
 
@@ -524,44 +656,28 @@ export default function PrintLayout(props: PrintLayoutProps) {
 
           .ps-thanks {
             margin-top: 4mm;
-            font-size: 10.6px;
+            font-size: 10.8px;
             font-weight: 700;
           }
 
           .ps-sign {
             margin-top: 2.5mm;
             font-size: 10.3px;
-            line-height: 1.45;
+            line-height: 1.35;
           }
 
           .ps-sign-name {
             margin-top: 6mm;
             font-weight: 700;
           }
+
         }
       `}</style>
 
       <table className="ps-print-shell">
         <thead>
           <tr>
-            <th>
-              <div className="ps-repeat-header">
-                <div className="ps-header-row">
-                  <div className="ps-header-left">
-                    <img
-                      src={quotationHeaderSrc}
-                      alt="QUOTATION"
-                      className="ps-quotation-title"
-                    />
-                  </div>
-
-                  <div className="ps-header-right">
-                    <img src={safeLogoSrc} alt="Logo Company" className="ps-logo" />
-                    <img src={safeAddressImageSrc} alt="Address" className="ps-address-image" />
-                  </div>
-                </div>
-              </div>
-            </th>
+            <th>{renderHeader()}</th>
           </tr>
         </thead>
 
@@ -569,147 +685,141 @@ export default function PrintLayout(props: PrintLayoutProps) {
           <tr>
             <td>
               <div className="ps-content">
-                <div className="ps-meta">
-                  <div>
-                    <strong>QUOTE NO.#:</strong> {quoteNo}
-                  </div>
-                  <div>
-                    <strong>DATE:</strong> {quoteDate}
-                  </div>
-                </div>
+          <div className="ps-meta">
+            <div>
+              <strong>QUOTE NO.#:</strong> {quoteNo}
+            </div>
+            <div>
+              <strong>DATE:</strong> {quoteDate}
+            </div>
+          </div>
 
-                <div className="ps-customer">
-                  <div className="ps-priority">{priority}</div>
-                  <div>Dear,</div>
-                  <div className="ps-customer-name">{attention}</div>
-                  <div>{customerName}</div>
-                  <div className="ps-address-text">{address}</div>
-                </div>
+          <div className="ps-customer">
+            <div className="ps-priority">{priority || 'CUSTOMER PRIORITY'}</div>
+            <div>Dear,</div>
+            <div className="ps-customer-name">{attention}</div>
+            <div>{customerName}</div>
+            <div className="ps-address-text">{cleanText(address)}</div>
+          </div>
 
-                <div className="ps-intro">
-                  Thank you for giving us the opportunity to participate in the procurement...
-                </div>
+          <div className="ps-intro">
+            Thank you for giving us the opportunity to participate in the procurement...
+          </div>
 
-                <table className="ps-table">
-                  <thead>
-                    <tr>
-                      <th className="no">NO.</th>
-                      <th className="desc">DESCRIPTION</th>
-                      <th className="qty">QTY</th>
-                      <th className="price">PRICE IDR</th>
-                      <th className="total">TOTAL IDR</th>
+          <table className="ps-table">
+            <thead>
+              <tr>
+                <th className="no">NO.</th>
+                <th className="desc">DESCRIPTION</th>
+                <th className="qty">QTY</th>
+                <th className="price">PRICE IDR</th>
+                <th className="total">TOTAL IDR</th>
+              </tr>
+            </thead>
+
+            {preparedItems.map((prepared, idx) => {
+              const item = prepared.item;
+              const productName = getProductName(item);
+              const detailSpec = prepared.detailSpec;
+              const total = Number(item.qty || 0) * Number(item.price || 0);
+              const before = isBefore(item);
+              const revisi = isRevisi(item);
+              const showStatusHere = item.status;
+
+              return (
+                <tbody key={item.id} className="ps-item-group">
+                  <tr className="ps-row-main">
+                    <td className="no">{idx + 1}</td>
+
+                    <td className="desc">
+                      {productName ? (
+                        <div className={revisi ? 'ps-prod ps-revisi' : 'ps-prod'}>{productName}</div>
+                      ) : null}
+                    </td>
+
+                    <td className="ps-num">
+                      <span>{item.qty}</span>
+                    </td>
+
+                    <td className="ps-num">
+                      <span className={before ? 'ps-strike' : ''}>
+                        {formatCurrency(Number(item.price || 0))}
+                      </span>
+                    </td>
+
+                    <td className="ps-num">
+                      <span className={before ? 'ps-strike' : ''}>{formatCurrency(total)}</span>
+                    </td>
+                  </tr>
+
+                  {(detailSpec || showStatusHere) && (
+                    <tr className="ps-detail-row">
+                      <td colSpan={5}>
+                        <div className="ps-detail-wrap">
+                          {detailSpec ? (
+                            <div className="ps-spec">
+                              <div
+                                className="ps-spec-content"
+                                dangerouslySetInnerHTML={{
+                                  __html: detailSpec,
+                                }}
+                              />
+                            </div>
+                          ) : null}
+
+                          {showStatusHere ? <div className="ps-status">{item.status}</div> : null}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
+                  )}
+                </tbody>
+              );
+            })}
+          </table>
 
-                  <tbody>
-                    {validItems.map((item, idx) => {
-                      const productName = getProductName(item);
-                      const detailSpec = cleanHtml(getDetailSpec(item));
-                      const total = item.qty * item.price;
-                      const before = isBefore(item);
-                      const revisi = isRevisi(item);
+          <div className="ps-bottom-block">
+            <div className="ps-bottom">
+              <div className="ps-terms">
+                <div className="ps-terms-title">TERMS AND CONDITIONS</div>
+                <div className="ps-terms-text">{cleanText(terms)}</div>
+              </div>
 
-                      return (
-                        <React.Fragment key={item.id}>
-                          <tr className="ps-row-main">
-                            <td className="no">{idx + 1}</td>
-
-                            <td className="desc">
-                              {productName ? (
-                                <div className={revisi ? 'ps-prod ps-revisi' : 'ps-prod'}>
-                                  {productName}
-                                </div>
-                              ) : null}
-                            </td>
-
-                            <td className="ps-num">
-                              <span>{item.qty}</span>
-                            </td>
-
-                            <td className="ps-num">
-                              <span className={before ? 'ps-strike' : ''}>
-                                {formatCurrency(item.price)}
-                              </span>
-                            </td>
-
-                            <td className="ps-num">
-                              <span className={before ? 'ps-strike' : ''}>
-                                {formatCurrency(total)}
-                              </span>
-                            </td>
-                          </tr>
-
-                          {(detailSpec || item.status) && (
-                            <tr className="ps-detail-row">
-                              <td colSpan={5}>
-                                <div className="ps-detail-wrap">
-                                  {detailSpec ? (
-                                    <div className="ps-spec">
-                                      <div
-                                        className="ps-spec-content"
-                                        dangerouslySetInnerHTML={{
-                                          __html: detailSpec,
-                                        }}
-                                      />
-                                    </div>
-                                  ) : null}
-
-                                  {item.status ? (
-                                    <div className="ps-status">{item.status}</div>
-                                  ) : null}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                <div className="ps-bottom-block">
-                  <div className="ps-bottom">
-                    <div className="ps-terms">
-                      <div className="ps-terms-title">TERMS AND CONDITIONS</div>
-                      <div className="ps-terms-text">{terms}</div>
-                    </div>
-
-                    <div className="ps-summary">
-                      <div className="ps-summary-row">
-                        <span>SUBTOTAL :</span>
-                        <span>{formatCurrency(computedSubtotal)}</span>
-                      </div>
-
-                      <div className="ps-summary-row">
-                        <span>DISC :</span>
-                        <span>{formatCurrency(discountValue)}</span>
-                      </div>
-
-                      <div className="ps-summary-row">
-                        <span>TAX {taxPercent}% :</span>
-                        <span>{formatCurrency(computedTaxValue)}</span>
-                      </div>
-
-                      <div className="ps-summary-row ps-grand">
-                        <span>GRAND TOTAL :</span>
-                        <span>{formatCurrency(computedGrandTotal)}</span>
-                      </div>
-
-                      <div className="ps-inwords">
-                        <div className="ps-inwords-label">In words:</div>
-                        <div className="ps-inwords-value">{inWords}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ps-thanks">THANK YOU FOR YOUR BUSINESS!</div>
-
-                  <div className="ps-sign">
-                    <div>Best Regards,</div>
-                    <div className="ps-sign-company">PT. Cipta Bangun Infrastruktur</div>
-                    <div className="ps-sign-name">Aeky Hermanto</div>
-                  </div>
+              <div className="ps-summary">
+                <div className="ps-summary-row">
+                  <span>SUBTOTAL :</span>
+                  <span>{formatCurrency(computedSubtotal)}</span>
                 </div>
+
+                <div className="ps-summary-row">
+                  <span>DISC :</span>
+                  <span>{formatCurrency(Number(discountValue || 0))}</span>
+                </div>
+
+                <div className="ps-summary-row">
+                  <span>TAX {taxPercent}% :</span>
+                  <span>{formatCurrency(computedTaxValue)}</span>
+                </div>
+
+                <div className="ps-summary-row ps-grand">
+                  <span>GRAND TOTAL :</span>
+                  <span>{formatCurrency(computedGrandTotal)}</span>
+                </div>
+
+                <div className="ps-inwords">
+                  <div className="ps-inwords-label">In words:</div>
+                  <div className="ps-inwords-value">{inWords}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="ps-thanks">THANK YOU FOR YOUR BUSINESS!</div>
+
+            <div className="ps-sign">
+              <div>Best Regards,</div>
+              <div className="ps-sign-company">PT. Cipta Bangun Infrastruktur</div>
+              <div className="ps-sign-name">Aeky Hermanto</div>
+            </div>
+          </div>
               </div>
             </td>
           </tr>
@@ -717,4 +827,7 @@ export default function PrintLayout(props: PrintLayoutProps) {
       </table>
     </section>
   );
+
+  if (typeof document === 'undefined') return content;
+  return createPortal(content, document.body);
 }
